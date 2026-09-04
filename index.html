@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digital Twin Genesis — AI Traffic Control</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <main id="stage">
+    <!-- p5.js mounts the canvas here. Everything drawn inside it comes from render.js. -->
+    <div id="canvas-host"></div>
+    <div id="canvas-caption">
+      <span class="cap-title">CITY GRID — LIVE DIGITAL TWIN</span>
+      <span class="cap-sub" id="cap-mode">GEMINI AI CONTROL</span>
+    </div>
+  </main>
+
+  <aside id="sidebar">
+    <header id="brand">
+      <h1>DIGITAL TWIN <span>GENESIS</span></h1>
+      <p id="brand-sub">Adaptive signal control · <span id="model-name">gemini-2.0-flash</span></p>
+    </header>
+
+    <section class="panel" id="control-panel">
+      <div class="mode-switch" role="group" aria-label="Controller mode">
+        <button id="btn-ai" class="mode-btn active" type="button">GEMINI AI</button>
+        <button id="btn-fixed" class="mode-btn" type="button">FIXED TIMER</button>
+      </div>
+      <div class="control-row">
+        <button id="btn-pause" class="ctl-btn" type="button">PAUSE</button>
+        <select id="incident-target" class="ctl-select" aria-label="Incident junction">
+          <option value="J1">J1</option>
+          <option value="J2">J2</option>
+          <option value="J3">J3</option>
+          <option value="J4">J4</option>
+        </select>
+        <button id="btn-incident" class="ctl-btn danger" type="button">INJECT INCIDENT</button>
+      </div>
+      <label class="slider-row" for="spawn-rate">
+        <span>TRAFFIC LOAD</span>
+        <input id="spawn-rate" type="range" min="0.2" max="3" step="0.1" value="1">
+        <output id="spawn-rate-out">1.0x</output>
+      </label>
+    </section>
+
+    <section class="panel">
+      <h2>COMPARISON</h2>
+      <div class="compare">
+        <div class="compare-cell" id="cell-ai">
+          <span class="compare-label">GEMINI AI</span>
+          <span class="compare-value" id="wait-ai">—</span>
+          <span class="compare-unit">avg wait · <em id="count-ai">0</em> veh</span>
+        </div>
+        <div class="compare-cell" id="cell-fixed">
+          <span class="compare-label">FIXED TIMER</span>
+          <span class="compare-value" id="wait-fixed">—</span>
+          <span class="compare-unit">avg wait · <em id="count-fixed">0</em> veh</span>
+        </div>
+      </div>
+      <p class="delta" id="delta-line">Run both modes to compare.</p>
+    </section>
+
+    <section class="panel">
+      <h2>JUNCTION QUEUES</h2>
+      <div id="junction-cards"></div>
+    </section>
+
+    <section class="panel grow">
+      <h2>AI DECISION LOG</h2>
+      <div id="decision-log"></div>
+    </section>
+
+    <section class="panel" id="stats-panel">
+      <h2>SYSTEM</h2>
+      <div class="stat-grid">
+        <div class="stat"><span class="stat-value" id="stat-processed">0</span><span class="stat-label">PROCESSED</span></div>
+        <div class="stat"><span class="stat-value" id="stat-wait">0.0s</span><span class="stat-label">AVG WAIT</span></div>
+        <div class="stat"><span class="stat-value" id="stat-active">0</span><span class="stat-label">ON ROAD</span></div>
+        <div class="stat"><span class="stat-value" id="stat-latency">—</span><span class="stat-label">API LATENCY</span></div>
+      </div>
+      <p class="source-note" id="source-note">Controller: heuristic fallback (no API key set)</p>
+    </section>
+  </aside>
+
+  <!-- Load order matters: state first, then the data layer, then the agents,
+       and only last the renderer. Simulation modules never import the renderer. -->
+  <script src="config.js"></script>
+  <script src="sim.js"></script>
+  <script src="sensorFeed.js"></script>
+  <script src="agent.js"></script>
+  <script src="coordinator.js"></script>
+  <script src="render.js"></script>
+</body>
+</html>

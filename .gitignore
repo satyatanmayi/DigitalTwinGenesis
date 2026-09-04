@@ -1,0 +1,10 @@
+# Local API key — never commit this file.
+config.js
+
+# OS / editor noise
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+node_modules/
