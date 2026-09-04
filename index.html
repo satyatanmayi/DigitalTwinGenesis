@@ -3,92 +3,169 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Digital Twin Genesis — AI Traffic Control</title>
+  <title>Digital Twin Genesis — Signal Control Twin</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 </head>
 <body>
   <main id="stage">
-    <!-- p5.js mounts the canvas here. Everything drawn inside it comes from render.js. -->
     <div id="canvas-host"></div>
+
     <div id="canvas-caption">
       <span class="cap-title">CITY GRID — LIVE DIGITAL TWIN</span>
-      <span class="cap-sub" id="cap-mode">GEMINI AI CONTROL</span>
+      <span class="cap-sub" id="cap-mode">FIXED-TIME PLAN</span>
     </div>
+
+    <div id="hud">
+      <div class="hud-cell"><span class="hud-value" id="hud-delay">0.0s</span><span class="hud-label">AVG DELAY / VEHICLE</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-queue">0</span><span class="hud-label">VEHICLES QUEUED</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-thru">0</span><span class="hud-label">VEH/MIN THROUGHPUT</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-clock">0:00</span><span class="hud-label">SIM CLOCK</span></div>
+    </div>
+
+    <p id="insight">Starting up.</p>
   </main>
 
   <aside id="sidebar">
     <header id="brand">
       <h1>DIGITAL TWIN <span>GENESIS</span></h1>
-      <p id="brand-sub">Adaptive signal control · <span id="model-name">gemini-2.0-flash</span></p>
+      <p id="brand-sub">Signal timing twin · <span id="model-name">heuristic</span></p>
     </header>
 
-    <section class="panel" id="control-panel">
-      <div class="mode-switch" role="group" aria-label="Controller mode">
-        <button id="btn-ai" class="mode-btn active" type="button">GEMINI AI</button>
-        <button id="btn-fixed" class="mode-btn" type="button">FIXED TIMER</button>
+    <!-- ------------------------------------------------ controller ------- -->
+    <section class="panel">
+      <h2>CONTROLLER</h2>
+      <div class="seg" role="group">
+        <button id="btn-plan" class="seg-btn active" type="button">FIXED PLAN</button>
+        <button id="btn-mp" class="seg-btn" type="button">MAX-PRESSURE</button>
+        <button id="btn-ai" class="seg-btn" type="button">GEMINI AI</button>
       </div>
-      <div class="control-row">
-        <button id="btn-pause" class="ctl-btn" type="button">PAUSE</button>
-        <select id="incident-target" class="ctl-select" aria-label="Incident junction">
+      <button id="btn-webster" class="wide-btn" type="button">APPLY WEBSTER OPTIMUM</button>
+      <p class="hint" id="webster-note">Webster computes the minimum-delay cycle from measured flows.</p>
+    </section>
+
+    <!-- ------------------------------------------------ signal timing ---- -->
+    <section class="panel">
+      <h2>SIGNAL TIMING</h2>
+      <label class="row" for="sel-junction">
+        <span>JUNCTION</span>
+        <select id="sel-junction" class="ctl-select">
+          <option value="ALL">ALL JUNCTIONS</option>
           <option value="J1">J1</option>
           <option value="J2">J2</option>
           <option value="J3">J3</option>
           <option value="J4">J4</option>
         </select>
-        <button id="btn-incident" class="ctl-btn danger" type="button">INJECT INCIDENT</button>
-      </div>
+      </label>
+      <label class="slider-row" for="green-ns">
+        <span>N–S GREEN</span>
+        <input id="green-ns" type="range" min="5" max="60" step="1" value="15">
+        <output id="green-ns-out">15s</output>
+      </label>
+      <label class="slider-row" for="green-ew">
+        <span>E–W GREEN</span>
+        <input id="green-ew" type="range" min="5" max="60" step="1" value="15">
+        <output id="green-ew-out">15s</output>
+      </label>
+      <p class="hint">Cycle <span id="cycle-out">38s</span> · yellow 3s · all-red 1s · min green 5s</p>
+    </section>
+
+    <!-- ------------------------------------------------ demand ----------- -->
+    <section class="panel">
+      <h2>DEMAND &amp; CLOCK</h2>
       <label class="slider-row" for="spawn-rate">
         <span>TRAFFIC LOAD</span>
         <input id="spawn-rate" type="range" min="0.2" max="3" step="0.1" value="1">
         <output id="spawn-rate-out">1.0x</output>
       </label>
+      <label class="slider-row" for="sim-speed">
+        <span>SIM SPEED</span>
+        <input id="sim-speed" type="range" min="0.5" max="8" step="0.5" value="1">
+        <output id="sim-speed-out">1.0x</output>
+      </label>
+      <div class="btn-row">
+        <button id="btn-pause" class="ctl-btn" type="button">PAUSE</button>
+        <button id="btn-reset" class="ctl-btn" type="button">REPLAY SAME TRAFFIC</button>
+      </div>
     </section>
 
+    <!-- ------------------------------------------------ plan testing ----- -->
     <section class="panel">
-      <h2>COMPARISON</h2>
-      <div class="compare">
-        <div class="compare-cell" id="cell-ai">
-          <span class="compare-label">GEMINI AI</span>
-          <span class="compare-value" id="wait-ai">—</span>
-          <span class="compare-unit">avg wait · <em id="count-ai">0</em> veh</span>
+      <h2>FIND A BETTER PLAN</h2>
+      <button id="btn-test" class="wide-btn primary" type="button">TEST THIS PLAN — 100s</button>
+      <p class="hint">Every test replays identical traffic (seed <span id="seed-out">—</span>), so the difference is the plan, not luck.</p>
+      <div id="results"></div>
+    </section>
+
+    <!-- ------------------------------------------------ scenarios -------- -->
+    <section class="panel">
+      <h2>THE BAD DAY</h2>
+      <div class="grid2">
+        <button id="btn-normal" class="ctl-btn" type="button">NORMAL</button>
+        <button id="btn-accident" class="ctl-btn danger" type="button">ACCIDENT</button>
+        <button id="btn-flood" class="ctl-btn danger" type="button">FLOOD</button>
+        <button id="btn-surge" class="ctl-btn danger" type="button">SURGE</button>
+        <button id="btn-failure" class="ctl-btn danger" type="button">SIGNAL FAIL</button>
+        <button id="btn-corridor" class="ctl-btn accent" type="button">PRIORITY REQUEST</button>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ ledger ----------- -->
+    <section class="panel">
+      <h2>COST OF PRIORITY</h2>
+      <div class="ledger">
+        <div class="ledger-cell good">
+          <span class="ledger-value" id="led-saved">—</span>
+          <span class="ledger-label">SECONDS SAVED</span>
         </div>
-        <div class="compare-cell" id="cell-fixed">
-          <span class="compare-label">FIXED TIMER</span>
-          <span class="compare-value" id="wait-fixed">—</span>
-          <span class="compare-unit">avg wait · <em id="count-fixed">0</em> veh</span>
+        <div class="ledger-cell bad">
+          <span class="ledger-value" id="led-paid">0</span>
+          <span class="ledger-label">VEH-SEC PAID</span>
         </div>
       </div>
-      <p class="delta" id="delta-line">Run both modes to compare.</p>
+      <p class="hint" id="led-note">Granted 0 · refused 0. Cross-traffic cost is measured while a corridor holds.</p>
     </section>
 
+    <!-- ------------------------------------------------ charts ----------- -->
+    <section class="panel">
+      <h2>RESPONSE OVER TIME</h2>
+      <canvas id="chart-delay" class="chart" width="360" height="80"></canvas>
+      <p class="chart-cap">Average delay per vehicle (s)</p>
+      <canvas id="chart-queue" class="chart" width="360" height="80"></canvas>
+      <p class="chart-cap">Vehicles queued, whole network</p>
+    </section>
+
+    <!-- ------------------------------------------------ junctions -------- -->
     <section class="panel">
       <h2>JUNCTION QUEUES</h2>
       <div id="junction-cards"></div>
     </section>
 
-    <section class="panel grow">
-      <h2>AI DECISION LOG</h2>
+    <!-- ------------------------------------------------ log -------------- -->
+    <section class="panel">
+      <h2>DECISION &amp; EVENT LOG</h2>
       <div id="decision-log"></div>
     </section>
 
-    <section class="panel" id="stats-panel">
+    <section class="panel">
       <h2>SYSTEM</h2>
       <div class="stat-grid">
-        <div class="stat"><span class="stat-value" id="stat-processed">0</span><span class="stat-label">PROCESSED</span></div>
-        <div class="stat"><span class="stat-value" id="stat-wait">0.0s</span><span class="stat-label">AVG WAIT</span></div>
+        <div class="stat"><span class="stat-value" id="stat-processed">0</span><span class="stat-label">COMPLETED</span></div>
+        <div class="stat"><span class="stat-value" id="stat-stop">0.0s</span><span class="stat-label">STOP DELAY</span></div>
         <div class="stat"><span class="stat-value" id="stat-active">0</span><span class="stat-label">ON ROAD</span></div>
         <div class="stat"><span class="stat-value" id="stat-latency">—</span><span class="stat-label">API LATENCY</span></div>
       </div>
-      <p class="source-note" id="source-note">Controller: heuristic fallback (no API key set)</p>
+      <p class="source-note" id="source-note">Controller: fixed-time plan</p>
     </section>
   </aside>
 
-  <!-- Load order matters: state first, then the data layer, then the agents,
-       and only last the renderer. Simulation modules never import the renderer. -->
+  <!-- State first, then data, then control, then the renderer. -->
   <script src="config.js"></script>
   <script src="sim.js"></script>
   <script src="sensorFeed.js"></script>
+  <script src="controllers.js"></script>
+  <script src="scenarios.js"></script>
+  <script src="bench.js"></script>
   <script src="agent.js"></script>
   <script src="coordinator.js"></script>
   <script src="render.js"></script>

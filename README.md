@@ -1,159 +1,170 @@
 # Digital Twin Genesis
 
-A 2D digital twin of a four-junction city grid, with each junction's traffic
-signal controlled live by a Gemini agent that reads a sensor feed and explains
-its decisions on screen.
+A browser-based digital twin of a signalised road network. Change the signal
+timings and the traffic volume, watch queues and delay respond in real time, and
+test whether your plan actually beats the algorithms on identical traffic.
 
-No build step, no npm, no framework. Vanilla JavaScript plus p5.js from a CDN.
+Then break it on purpose — a collision, waterlogging, a demand surge, a signal
+failure, a priority request — because that is the part no adaptive traffic
+control system lets an operator rehearse.
+
+No build step, no framework, no npm. Vanilla JavaScript plus p5.js from a CDN.
 
 ---
 
 ## Run it
 
-1. `copy config.example.js config.js` (or copy the file by hand).
-2. Paste a Gemini API key into `config.js`. Get one at
-   <https://aistudio.google.com/apikey>.
-3. Open `index.html`, or run `run.bat` and browse to <http://localhost:8000>.
+1. Copy `config.example.js` to `config.js`.
+2. Optionally paste a Gemini API key into it (<https://aistudio.google.com/apikey>).
+3. Run `run.bat` and open <http://localhost:8000>, or open `index.html` directly.
 
-Running through `run.bat` (a plain `python -m http.server`) is recommended.
-Some browsers restrict `fetch` from `file://` origins.
+**Without a key everything still works.** The AI controller falls back to a
+local rule-based controller and labels those decisions `HEURISTIC`. The fixed
+plan, Webster, Max-Pressure, all scenarios and all measurement are unaffected.
 
-**Without a key the app still runs.** `agent.js` falls back to a local
-rule-based controller and labels those decisions `HEURISTIC` in the log.
-
-### A note on the API key
-
-This app is entirely client-side, so any key in `config.js` is visible to
-anyone who opens the page or its developer tools. `config.js` is git-ignored so
-it never reaches the repository, but for anything beyond a demo the call must
-be proxied through a server that holds the key.
+Any key in `config.js` is visible to anyone who opens the page, so use a
+throwaway key. `config.js` is git-ignored.
 
 ---
 
-## Controls
+## What you can do with it
 
-| Control | Effect |
+### Tune the timings
+Pick a junction (or all four), drag the north–south and east–west green sliders,
+and watch the queue bars and the delay chart respond. The cycle length updates
+as you drag.
+
+### Find out whether your plan is any good
+`TEST THIS PLAN` replays **identical traffic** — same seed, same arrivals — for
+100 measured seconds at 8× speed, and records the average control delay and
+throughput. Switch the controller to Max-Pressure or Gemini, test again, and the
+results table shows whether the algorithms beat you. The best result is marked.
+
+`APPLY WEBSTER OPTIMUM` computes the classical minimum-delay cycle from the
+flows actually measured so far and writes it into the sliders, so there is a
+sensible starting point rather than a blank slate.
+
+### Break it
+| Button | What happens |
 | --- | --- |
-| `GEMINI AI` / `FIXED TIMER` | Switches between AI control and a fixed 12-second-green baseline. Average wait is tracked separately for each, so the comparison panel shows whether the AI actually helps. |
-| `PAUSE` (or spacebar) | Freezes the simulation clock. |
-| `INJECT INCIDENT` | Raises `incidentFlag` on the selected junction for 25 seconds. The agent sees it in the next snapshot and reacts. |
-| `TRAFFIC LOAD` | Scales the spawn rate from 0.2x to 3x. |
+| `ACCIDENT` | One approach at J2 cannot discharge. Watch the queue spill back |
+| `FLOOD` | A link is waterlogged: speeds drop to 45% and buses and trucks are barred by weight restriction |
+| `SURGE` | East–west arrivals jump to 2.6× — a stadium emptying |
+| `SIGNAL FAIL` | J3 drops to a stuck 45 s / 45 s cycle. Watch the damage spread to its neighbours |
+| `PRIORITY REQUEST` | A verified priority request arrives. The network decides whether to grant it |
+
+### See what priority costs
+When a corridor is granted, the ledger measures both sides live: the seconds the
+priority vehicle saved against the delay ordinary vehicles took on the same
+network in the same window, and the vehicle-seconds cross traffic paid for it.
+
+When the network is already congested, the request is **refused**, with the
+reason stated. That is the point — the tool shows why the network said no.
 
 ---
 
 ## What is real and what is mocked
 
-**Mocked — `sensorFeed.js`**
-
-The sensor layer is the only fake part. It samples the running simulation once
-a second and publishes a snapshot per junction in the shape a roadside sensor
-gateway would deliver:
+**Mocked — `sensorFeed.js` only.** The sensor layer samples the running
+simulation once a second and publishes a snapshot per junction in the shape a
+roadside sensor gateway delivers:
 
 ```json
-{
-  "junctionId": "J1",
-  "queueLengths": { "N": 3, "S": 1, "E": 6, "W": 5 },
-  "avgSpeed": 18.4,
-  "incidentFlag": false
-}
+{ "junctionId": "J1", "queueLengths": {"N":3,"S":1,"E":6,"W":5},
+  "avgSpeed": 18.4, "incidentFlag": false }
 ```
 
-To go live, replace the body of `sample()` with a `fetch` against a real sensor
-API, a WebSocket, or an MQTT subscription that fills the same fields. Nothing
-downstream knows or cares where the numbers came from, so `sim.js`, `agent.js`
-and `render.js` do not change.
+Going live replaces the body of one function, `sample()`. Nothing downstream
+knows where the numbers came from.
 
-**Real logic — everything else**
+**Real — everything else.**
 
-- **Signal state machine** (`sim.js`). Opposing approaches run as phase pairs:
-  `NS` serves the north and south approaches, `EW` serves east and west. Greens
-  run down a timer, hand over to a 2.2-second yellow, then to the other phase.
-  A minimum green of 5 seconds and a maximum green of 22 seconds are enforced
-  in the state machine itself, so no AI decision can create an unsafe or
-  starving signal.
-- **Vehicle physics** (`sim.js`). Car-following: each vehicle picks a target
-  speed from the gap to whatever is ahead of it — the lead vehicle or a red
-  stop line — and approaches that target under finite acceleration and
-  deceleration. Movement is per-frame and continuous, driven by
-  `requestAnimationFrame`. Vehicles queue, creep, and pull away in a wave when
-  the light turns green, because nothing teleports.
-- **Statistics** (`sim.js`). Queue length per approach, longest wait per
-  approach, per-junction throughput, and system-wide processed count and
-  average wait — all measured from actual vehicle state, not estimated.
-- **AI decisions** (`agent.js`). Real Gemini API calls with structured JSON
-  output.
+- **Vehicle physics.** Gap-based car following under finite acceleration,
+  calibrated at 4 px per metre from stated values: 40 km/h free flow, 1.5 m/s²
+  acceleration, 3 m/s² braking, 2 m standstill gap, 2 s following headway, and
+  2 s of start-up lost time at every green.
+- **Heterogeneous traffic.** Two-wheelers, auto-rickshaws, cars, buses and
+  trucks, each with its own length, PCU value, speed and weight class.
+- **Signal state machines.** NS/EW phase pairs with yellow and all-red
+  intervals, and minimum and maximum green enforced in the state machine itself,
+  so no controller — including the AI — can produce an unsafe or starving
+  signal.
+- **Webster and Max-Pressure**, implemented as published, with their known
+  limitations stated in `docs/LOGIC.md`.
+- **Measurement.** Control delay, stopped delay, per-approach queues in vehicles
+  and in PCU, throughput, and the priority ledger — all measured from vehicle
+  state, none estimated.
+- **Seeded demand**, so any two plans can be compared on exactly the same
+  traffic.
+
+Full specification, including every constant and every limitation:
+[`docs/LOGIC.md`](docs/LOGIC.md). Positioning, prior art and the build plan:
+[`docs/STRATEGY.md`](docs/STRATEGY.md).
 
 ---
 
 ## Architecture
 
-The hard rule of this codebase: **simulation state and rendering never mix.**
+The hard rule: **simulation state and rendering never mix.**
 
 | File | Role | May draw? |
 | --- | --- | --- |
-| `sim.js` | World state, vehicle physics, signal state machines, statistics, the master clock | No |
-| `sensorFeed.js` | Mock sensor gateway; publishes snapshots | No |
-| `agent.js` | Per-junction Gemini calls; applies decisions via `SIM.applyAction()` | No |
+| `sim.js` | World state, physics, signal state machines, statistics, the clock | No |
+| `sensorFeed.js` | Mock sensor gateway | No |
+| `controllers.js` | Webster, Max-Pressure | No |
+| `scenarios.js` | Accident, flood, surge, failure, priority corridor, ledger | No |
+| `bench.js` | Seeded plan evaluation, insight text | No |
+| `agent.js` | Gemini decisions, heuristic fallback | No |
 | `coordinator.js` | Corridor-level coordinator. Stub only | No |
-| `render.js` | All p5.js drawing and all sidebar DOM updates | Yes — only this file |
+| `render.js` | All p5.js drawing and all sidebar DOM | Yes — only this file |
 
-`sim.js`, `sensorFeed.js` and `agent.js` contain zero p5.js calls and zero DOM
-access. Vehicle positions are plain `{x, y}` numbers in a fixed 1200x800 world
-coordinate space; the renderer scales that space to whatever canvas it has.
+Vehicle positions are plain `{x, y}` numbers in a fixed 1200 × 800 world space.
+`sim.js` owns the `requestAnimationFrame` loop and calls subscribers registered
+with `SIM.onTick(fn)`, so the renderer does not drive the simulation. **Swapping
+the 2D view for Three.js touches `render.js` and nothing else.**
 
-`sim.js` also owns the `requestAnimationFrame` loop and calls subscribers
-registered through `SIM.onTick(fn)`. The renderer does not drive the
-simulation. **Swapping the 2D view for a Three.js scene therefore touches
-`render.js` and nothing else** — the new renderer reads the same
-`SIM.junctions`, `SIM.vehicles` and `AGENT.decisions` data.
+Every controller writes signals through one function, `SIM.applyAction()`. That
+single-writer property is what makes the safety guarantees hold no matter what
+any controller — including a language model — returns.
 
-### The AI control loop
+---
 
-Every 5 simulated seconds, each junction sends its own snapshot to Gemini. The
-four junctions are queried in parallel, so one slow response never delays the
-others. The prompt carries the junction's queues, longest waits, current phase
-and green elapsed time, its adjacent junctions' total queue pressure, and its
-own last two decisions (which suppresses flip-flopping). The response is
-constrained by a `responseSchema` to:
+## Prior art, cited loudly
 
-```json
-{ "junctionId": "J1", "action": "extend_green_EW", "reason": "EW queue 7 against NS queue 2, so serve EW." }
-```
+Adaptive signal control is deployed and works. Bengaluru runs **B-ATCS** on
+**CoSiCoSt** (C-DAC), built for non-lane-based heterogeneous traffic, across
+roughly 165 junctions, with about a 33% travel-time reduction reported at Hudson
+Circle. SCATS, SCOOT, InSync and Surtrac occupy the same space internationally.
+Emergency vehicle preemption is standardised as **NTCIP 1211**.
 
-`action` is one of `extend_green_NS`, `extend_green_EW`, `hold`, `switch`. The
-reason string is written onto the junction and drawn as a floating label next
-to it on the canvas, so the reasoning is visible in real time rather than
-buried in a console.
+"AI times traffic signals better" is not a new claim. What these systems do not
+give an operator is a preview before a decision, a stated reason for a decision,
+a rehearsal of the abnormal day, or an account of what granting priority costs
+everyone else. That is what this tool is for.
 
-Calls abort after 4.5 seconds. On any error or timeout the signal keeps its
-previous state and the state machine carries on — the simulation never freezes
-waiting for the network.
+Sources are listed in [`docs/STRATEGY.md`](docs/STRATEGY.md).
 
 ---
 
 ## Where a Claude coordinator would sit
 
-The current design is four independent agents, each optimising its own
-junction, which is exactly the classic failure mode of decentralised signal
-control: J1 can clear its eastbound queue perfectly and in doing so dump a
-platoon straight into a red at J2. A Claude coordinator would sit one level
-above these agents and run on a slower cadence — every 20 to 30 simulated
-seconds instead of every 5. It would receive all four sensor snapshots plus the
-recent decision log, reason about the corridor as a whole (where the platoons
-are, which direction carries the dominant flow, which junction is the
-bottleneck), and emit *policy hints* rather than direct commands: a preferred
-phase bias and a green offset per junction, so that a platoon released at J1
-arrives at J2 as its green begins — classic green-wave progression, but derived
-from live conditions instead of a fixed offset table. Each per-junction Gemini
-agent would then receive its hint as one extra field in its prompt and remain
-free to override it for a local emergency such as a raised `incidentFlag`. That
-split keeps the fast local loop responsive, gives the slow global loop the
-corridor view that no single junction has, and keeps exactly one writer to the
-signal state machine. `coordinator.js` is stubbed with this design in a TODO;
-it is not implemented.
+Four independent per-junction agents have the classic failure mode of
+decentralised control: J1 clears its eastbound queue perfectly and dumps a
+platoon into a red at J2. A Claude coordinator would sit above them on a slower
+cadence — every 20 to 30 simulated seconds rather than every 5 — take all four
+snapshots plus the recent decision log, reason about the corridor as a whole,
+and emit *policy hints* rather than commands: a preferred phase bias and a green
+offset per junction, so a platoon released at J1 meets green at J2. Each local
+agent would receive its hint as one more prompt field and stay free to override
+it for a local emergency. The fast loop stays responsive, the slow loop gets the
+corridor view no single junction has, and there is still exactly one writer to
+the signal state machine. `coordinator.js` carries this as a TODO; it is not
+implemented.
 
 ---
 
-## Out of scope tonight
+## Not in this build
 
-React, any build tool, SUMO/traci, and the emergency-vehicle green corridor.
+React, any build tool, SUMO/traci, route choice and origin–destination demand,
+turning movements, pedestrians, and real-map import. The limitations are listed
+in full in `docs/LOGIC.md` rather than left for someone to discover.

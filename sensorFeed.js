@@ -45,12 +45,22 @@ const SENSOR_FEED = (function () {
         ? speeds.reduce(function (a, b) { return a + b; }, 0) / speeds.length
         : 0;
 
+      let blocked = null;
+      for (const d of SIM.DIRS) {
+        if (SIM.conditions.blockedApproaches[j.id + ':' + d]) blocked = d;
+      }
+
       snapshots[j.id] = {
         junctionId: j.id,
         ts: Math.round(now * 1000) / 1000,
         queueLengths: { N: j.queues.N, S: j.queues.S, E: j.queues.E, W: j.queues.W },
+        queuePcu: {
+          N: Math.round(j.pcuQueues.N * 10) / 10, S: Math.round(j.pcuQueues.S * 10) / 10,
+          E: Math.round(j.pcuQueues.E * 10) / 10, W: Math.round(j.pcuQueues.W * 10) / 10
+        },
         avgSpeed: Math.round(avgSpeed * 10) / 10,          // km/h
-        incidentFlag: (incidentUntil[j.id] || 0) > now,
+        incidentFlag: (incidentUntil[j.id] || 0) > now || blocked !== null,
+        blockedApproach: blocked,
 
         // --- simulation-only context, see header note ---
         longestWaitSec: {

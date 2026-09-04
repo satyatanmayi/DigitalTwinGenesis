@@ -1,358 +1,347 @@
 # Simulation Model Specification
 
-*What the simulator actually computes, in full, with every constant named and every assumption
-stated. This is the document to answer a jury question from — "how does it work" and "why should I
-believe it" are both answered here.*
+*What the simulator actually computes, with every constant named and every
+assumption stated. This is the document to answer a jury question from — "how
+does it work" and "why should I believe it" are both answered here.*
 
-Everything below describes the code as it stands in `sim.js`, `sensorFeed.js` and `agent.js`.
-Where a value is not yet calibrated to the real world, it says so.
+Describes the code in `sim.js`, `sensorFeed.js`, `controllers.js`,
+`scenarios.js`, `bench.js` and `agent.js`.
 
 ---
 
-## 1. Structure of the model
-
-Three layers, deliberately separated:
+## 1. Structure
 
 | Layer | File | Responsibility |
 | --- | --- | --- |
-| State and physics | `sim.js` | Where every vehicle is, what every signal is doing, what the statistics are. Owns the clock |
-| Data | `sensorFeed.js` | Publishes a sensor-shaped snapshot of that state once per second |
-| Control | `agent.js` | Reads snapshots, decides signal actions, applies them through one public function |
+| State and physics | `sim.js` | Vehicle motion, signal state machines, statistics. Owns the clock |
+| Data | `sensorFeed.js` | Publishes a sensor-shaped snapshot once per simulated second |
+| Classical control | `controllers.js` | Webster cycle computation, Max-Pressure control |
+| Disruption | `scenarios.js` | Accident, flood, surge, signal failure, priority corridor and its ledger |
+| Evaluation | `bench.js` | Seeded plan testing, plain-language insight |
+| AI control | `agent.js` | Per-junction Gemini decisions, local heuristic fallback |
 | View | `render.js` | Draws. Computes nothing |
 
-The control layer can only change signals through `SIM.applyAction(junctionId, action)`. There is
-no other write path into the signal state machine. That single-writer property is what makes the
-safety guarantees in §4.3 hold no matter what the AI returns.
+Every controller — fixed plan, Webster, Max-Pressure, Gemini — writes signals
+through **one** function, `SIM.applyAction()`. The safety guarantees in §4.3
+therefore hold whatever any of them returns.
 
 ---
 
-## 2. Geometry and coordinates
+## 2. Calibration
 
-A fixed world coordinate space of **1200 × 800 world pixels**, independent of screen size. The
-renderer scales it to whatever canvas it has; the physics never sees screen pixels.
+**4 world pixels = 1 metre.** The world is 1200 × 800 px, so 300 m × 200 m.
+Every physical constant is derived from a stated traffic-engineering value:
 
-| Element | Value |
+| Parameter | Real value | In model |
+| --- | --- | --- |
+| Free-flow speed | 40 km/h | 44.4 px/s |
+| Acceleration | 1.5 m/s² | 6 px/s² |
+| Braking | 3.0 m/s² | 12 px/s² |
+| Standstill gap | 2.0 m | 8 px |
+| Following headway | 2.0 s | `SAFE_GAP` = 89 px |
+| Start-up lost time | 2.0 s | applied at the head of each queue |
+| Saturation flow | 1800 PCU/h/lane | used by Webster |
+| Queue detection zone | 60 m upstream | 240 px |
+| Queued threshold | below 8 km/h | 8.9 px/s |
+
+Junction spacing: 90 m between the vertical roads, 70 m between the horizontal
+roads — a dense city-centre grid.
+
+### 2.1 Geometry
+
+Junctions J1 (top-left), J2 (top-right), J3 (bottom-left), J4 (bottom-right).
+Right-hand traffic: eastbound at `roadY + 16`, westbound at `roadY − 16`,
+southbound at `roadX − 16`, northbound at `roadX + 16`.
+
+Each vehicle carries a scalar `s`, its distance along its own direction of
+travel (`E: s = x`, `W: s = −x`, `S: s = y`, `N: s = −y`). `s` always increases
+as the vehicle moves, so lead-vehicle and stop-line comparisons are one code
+path for all four directions.
+
+---
+
+## 3. Vehicle mix
+
+Heterogeneous, because Indian urban traffic is:
+
+| Type | Share | Length | PCU | Weight class | Speed factor |
+| --- | --- | --- | --- | --- | --- |
+| Two-wheeler | 42% | 2.0 m | 0.25 | light | 1.05 |
+| Auto-rickshaw | 16% | 2.8 m | 0.50 | light | 0.85 |
+| Car | 30% | 4.5 m | 1.00 | light | 1.00 |
+| Bus | 5% | 11.0 m | 3.00 | **heavy** | 0.80 |
+| Truck | 7% | 8.0 m | 2.20 | **heavy** | 0.78 |
+
+The weight class is what the flood scenario acts on: a waterlogged link bars
+heavy vehicles. PCU is what Webster's flow ratios are computed in.
+
+---
+
+## 4. Physics
+
+### 4.1 Car following
+
+```
+gapLead = s(lead) − s(self) − length(lead)        (∞ if nothing ahead)
+gapStop = s(nearest non-green stop line) − s(self)  (∞ if none)
+gap     = min(gapLead, gapStop)
+
+target  = vmax × clamp((gap − MIN_GAP) / (SAFE_GAP − MIN_GAP), 0, 1)
+
+if target > v:  v = min(target, v + ACCEL·dt)
+else:           v = max(target, v − DECEL·dt)
+s += v·dt
+```
+
+`vmax` is the vehicle type's own free-flow speed, reduced by a flood factor on
+a waterlogged link and raised 15% for a priority vehicle.
+
+`dt` is real frame time clamped to 50 ms, and a speed multiplier above 1×
+sub-steps rather than taking one large step, so the physics stays stable when
+the user fast-forwards.
+
+### 4.2 Start-up lost time
+
+A stopped vehicle at the head of a queue does not move for the first 2 seconds
+of green. Without this, queues discharge unrealistically fast and every
+computed capacity is optimistic.
+
+### 4.3 Stop line and dilemma zone
+
+The stop line is 38 px before the junction centre. Yellow is treated as red
+**except** within 18 px of the stop line, where the vehicle is committed and
+clears the junction rather than stopping inside it.
+
+---
+
+## 5. Signal control
+
+### 5.1 Phase pairs
+
+`NS` serves the north and south approaches; `EW` serves east and west. Only one
+pair runs at a time, so conflicting movements are impossible by construction.
+States within a phase: `green` → `yellow` → `allred` → other phase green.
+
+| Constant | Value |
 | --- | --- |
-| Vertical roads at x | 420, 780 |
-| Horizontal roads at y | 280, 560 |
-| Junctions | J1 (420, 280), J2 (780, 280), J3 (420, 560), J4 (780, 560) |
-| Road width | 64 px |
-| Lane centre offset from road centreline | ±16 px |
-| Junction box half-width | 36 px |
-| Vehicle length × width | 20 × 12 px |
+| Yellow | 3.0 s |
+| All-red | 1.0 s |
+| Minimum green | 5 s |
+| Maximum green | 60 s |
+| Default plan | 18 s NS / 18 s EW, giving a 40 s cycle |
 
-**Lane assignment is right-hand traffic.** Eastbound vehicles run at `y = roadY + 16`, westbound at
-`y = roadY − 16`, southbound at `x = roadX − 16`, northbound at `x = roadX + 16`.
+### 5.2 The timing plan — the user's control
 
-Vehicles travel in a straight line from one edge of the world to the opposite edge and never turn.
-Every conflict at a junction is therefore resolved by the signal alone, and no gridlock can arise
-from turning conflicts. This is a simplification, and it is listed as such in §8.
+Each junction has a plan `{ greenNS, greenEW, offset }`. The sliders write into
+it live; the running signal picks up the new duration at its next phase change.
+This is the primary interaction the problem statement asks for.
 
-### 2.1 Progress coordinate
+### 5.3 Safety guarantees — true whatever any controller returns
 
-Each vehicle carries a scalar `s`, its distance along its own direction of travel, defined as the
-dot product of its position with its direction unit vector:
+1. **Minimum green.** A green is never cut below 5 s served.
+2. **Maximum green.** Once 60 s of green have run, the timer is forced to zero.
+   A controller that keeps saying "extend" cannot starve the opposing phase.
+3. **Yellow and all-red are never skipped.** Every phase change passes through
+   both intervals.
+4. **Single writer.** `applyAction` is the only path into the signal timers.
 
-```
-E: s =  x      W: s = −x      S: s =  y      N: s = −y
-```
+Hard-coded rules, never learned. A traffic authority must be able to ask why
+something happened and get an answer that does not depend on model weights.
 
-`s` always increases as a vehicle moves, whichever way it faces. Every comparison in the physics —
-lead vehicle, stop line, junction centre — is a comparison of `s` values, so there is one code path
-for all four directions rather than four special cases.
-
----
-
-## 3. Vehicle physics
-
-A gap-based car-following model. Each vehicle picks a target speed from the distance to whatever is
-ahead of it, then moves toward that target under a finite acceleration limit.
-
-### 3.1 The gap
-
-```
-gapLead    = s(lead) − s(self) − VEHICLE_LEN        (∞ if no vehicle ahead in this lane)
-gapStop    = s(nearest stop line that is not green) − s(self)     (∞ if none)
-gap        = min(gapLead, gapStop)
-```
-
-### 3.2 Target speed
-
-```
-target = MAX_SPEED × clamp( (gap − MIN_GAP) / (SAFE_GAP − MIN_GAP), 0, 1 )
-```
-
-Linear between a full stop at `MIN_GAP` and free flow at `SAFE_GAP`.
-
-### 3.3 Speed update, per frame
-
-```
-if target > v:  v = min(target, v + ACCEL × dt)
-else:           v = max(target, v − DECEL × dt)
-v = max(v, 0)
-s = s + v × dt
-```
-
-`dt` is the real elapsed frame time, clamped to a maximum of 0.05 s so that a browser tab returning
-from the background cannot teleport a vehicle through a red light.
-
-### 3.4 Constants
-
-| Constant | Value | Meaning |
-| --- | --- | --- |
-| `MAX_SPEED` | 135 px/s | Free-flow speed |
-| `ACCEL` | 95 px/s² | Acceleration limit |
-| `DECEL` | 280 px/s² | Braking limit — deliberately harsher than acceleration |
-| `MIN_GAP` | 10 px | Standstill bumper gap |
-| `SAFE_GAP` | 110 px | Gap at which free flow resumes |
-| `VEHICLE_LEN` | 20 px | Occupied length |
-| `MAX_VEHICLES` | 40 | Population cap |
-
-### 3.5 Stop-line rule
-
-For each junction ahead on a vehicle's path, the stop line sits at `junctionCentre − 38 px` in the
-direction of travel. The vehicle treats it as an obstacle unless the signal for its approach is
-green. **Yellow is treated as red, except within 18 px of the stop line**, where the vehicle is
-committed and clears the junction instead of stopping on it. This is the dilemma-zone rule, and
-without it vehicles brake to a halt inside the junction box.
-
-### 3.6 Departure
-
-A vehicle is removed once it passes 80 px beyond any world edge. Its accumulated wait time is
-added to the statistics at that moment, so every completed trip is counted exactly once.
-
----
-
-## 4. Signal state machine
-
-### 4.1 Phases
-
-Opposing approaches run together as a **phase pair**: `NS` serves the north and south approaches,
-`EW` serves east and west. Only one pair is served at a time, so conflicting movements are
-impossible by construction rather than by rule-checking.
-
-A signal has exactly two states within a phase — `green` and `yellow` — and the approaches not
-served by the current phase read `red`.
-
-```
-signalFor(junction, direction):
-    group = (direction is N or S) ? "NS" : "EW"
-    if junction.phase ≠ group: return "red"
-    return junction.state
-```
-
-### 4.2 Transitions
-
-```
-green,  timer runs out  ->  yellow, timer = YELLOW
-yellow, timer runs out  ->  swap phase, state = green, timer = GREEN
-```
-
-| Timing constant | Value | Meaning |
-| --- | --- | --- |
-| `baseGreen` | 9 s | Green length under AI control before any extension |
-| `fixedGreen` | 12 s | Green length in the fixed-timer baseline mode |
-| `yellow` | 2.2 s | Yellow interval |
-| `minGreen` | 5 s | A green is never cut shorter than this |
-| `maxGreen` | 22 s | A green is never extended beyond this |
-| `extendStep` | 4 s | Seconds added by one `extend_green_*` action |
-
-### 4.3 Safety guarantees — these hold whatever the AI returns
-
-1. **Minimum green.** `cutGreenShort()` never reduces the remaining green below what is needed to
-   reach `minGreen` elapsed. A decision to switch immediately after a change is honoured only after
-   5 s of green have been served.
-2. **Maximum green.** Once `greenElapsed` reaches `maxGreen`, the timer is forced to zero
-   regardless of any extension. A model that repeatedly says "extend" cannot starve the opposing
-   phase.
-3. **Yellow is never skipped.** Every phase change passes through the yellow interval. No action
-   can shorten or bypass it.
-4. **Single writer.** `applyAction` is the only function that touches signal timers from outside.
-
-These are hard-coded rules, never learned. The reasoning is the same as Kalavathi's: a traffic
-authority must be able to ask why something happened and get an answer that does not depend on a
-model's weights.
-
-### 4.4 Action semantics
+### 5.4 Actions
 
 | Action | Effect |
 | --- | --- |
-| `extend_green_NS` | If NS is the running green, add 4 s up to the `maxGreen` ceiling. If NS is not running, cut the current green short (subject to `minGreen`) so NS arrives sooner |
-| `extend_green_EW` | Mirror image |
-| `switch` | Cut the running green short, subject to `minGreen` |
+| `extend_green_NS` / `extend_green_EW` | Add 4 s to that phase, up to the ceiling; if that phase is not running, end the current green early |
+| `switch` | End the running green now, subject to minimum green |
 | `hold` | No change |
 
-In fixed-timer baseline mode `applyAction` returns without doing anything, so the baseline is
-genuinely uncontrolled and the comparison is fair.
+In fixed-plan mode `applyAction` does nothing, so the baseline is genuinely
+uncontrolled and comparisons are fair.
 
 ---
 
-## 5. Demand generation
+## 6. Controllers
 
-Eight spawn points — one per direction per road — at the world edges.
+### 6.1 Fixed plan
+Runs the user's greens. The baseline everything else is measured against.
 
-- Each spawn point draws its next headway uniformly from **1.1 to 4.2 seconds**, divided by the
-  traffic-load multiplier the user sets (0.2× to 3×).
-- A spawn is suppressed if a vehicle is within 70 px of the entry point, or if the population is
-  already at `MAX_VEHICLES`. Suppressed arrivals are dropped, not queued.
+### 6.2 Webster (1958)
 
-**Consequence to state openly:** at 1.0× load the population saturates at the 40-vehicle cap, so
-the cap, rather than the headway distribution, becomes the binding constraint on demand. Raising
-`MAX_VEHICLES` is the first thing to change when studying oversaturated conditions.
-
----
-
-## 6. Measurements
-
-Every number the tool reports is measured from vehicle state. None is estimated or assumed.
-
-| Quantity | Definition |
-| --- | --- |
-| **Queue length**, per approach | Count of vehicles within 190 px upstream of the stop line whose speed is below 28 px/s. The "N approach" holds vehicles waiting north of the junction and travelling south — the queue a driver on the north arm would see |
-| **Longest wait**, per approach | Maximum accumulated wait among the vehicles in that queue zone |
-| **Wait time**, per vehicle | Seconds accumulated while speed is below 5 px/s. This is stopped delay, not control delay — see §8 |
-| **Throughput**, per junction | Vehicles whose progress coordinate has passed the junction centre, counted once each |
-| **Processed** | Vehicles that have left the world |
-| **Average wait** | Total accumulated wait of departed vehicles ÷ number of departed vehicles |
-| **Average wait by mode** | The same, tracked separately for AI control and fixed-timer control, so the two can be compared |
-
----
-
-## 7. Sensor layer and the control loop
-
-### 7.1 Snapshot
-
-`sensorFeed.js` samples state **once per simulated second** and publishes, per junction:
-
-```json
-{
-  "junctionId": "J1",
-  "ts": 120.0,
-  "queueLengths":   { "N": 3, "S": 1, "E": 6, "W": 5 },
-  "avgSpeed": 18.4,
-  "incidentFlag": false,
-
-  "longestWaitSec": { "N": 4, "S": 1, "E": 22, "W": 19 },
-  "phase": "NS",
-  "phaseState": "green",
-  "greenElapsedSec": 6.2
-}
+```
+L = 2·(yellow + all-red) + 2·start-up lost      = 12 s
+y = critical flow ratio per phase = q(PCU/h) / 1800
+Y = y(NS) + y(EW)
+C = (1.5·L + 5) / (1 − Y)
+green(phase) = (C − L) · y(phase) / Y
 ```
 
-The first four fields are what a real roadside sensor gateway delivers. The remaining three are
-simulation-side context for the controller's prompt; in a live deployment they come from the
-signal controller's own status feed, not from the sensors.
+Flows are measured from actual arrivals at each approach since the run started.
+The result is written into the plan, so the user can see, adjust and test it.
 
-`avgSpeed` is reported in km/h using a scale factor of 0.45 km/h per world px/s.
+**Stated limitation:** Webster overestimates cycle length once the
+volume-to-capacity ratio passes about 0.5, and it was derived for homogeneous
+lane-disciplined traffic. Using PCU flows is the usual correction. Above
+Y = 0.9 the formula diverges, so it is capped and reported as oversaturated —
+no cycle length fixes a junction that is over capacity.
 
-**Replacing the mock with real sensors touches exactly one function** — `sample()`. Every consumer
-downstream reads the same shape, so `sim.js`, `agent.js` and `render.js` do not change.
+### 6.3 Max-Pressure
 
-### 7.2 Control loop
+Pressure of a phase = total queued PCU on the approaches it serves. After
+minimum green, if the other phase's pressure exceeds the running phase's by
+more than 1.0 PCU, switch.
 
-Every **5 simulated seconds** each junction requests a decision. The four junctions are queried in
-parallel, so a slow response at one junction never delays another.
+**Stated simplification:** the textbook formulation subtracts downstream queue
+from upstream queue. Here vehicles leave at the network boundary, so the
+downstream term is zero for edge movements; the upstream term is used alone.
 
-The prompt carries: the junction's own queues and longest waits, its current phase, state and green
-elapsed, the min and max green limits, the total queue pressure at each adjacent junction, and its
-own last two decisions with their reasons. The last item exists to suppress flip-flopping — without
-decision history, a controller that sees a balanced junction oscillates.
+Max-Pressure is the standard baseline in the RL signal-control literature —
+learned methods in the RESCO benchmark beat it by roughly 11–13%, which makes
+it a strong opponent, not a straw man.
 
-The response is constrained by a JSON response schema to `{ junctionId, action, reason }`, and the
-action is validated against the allowed set before it is applied. The reason string is written onto
-the junction and drawn beside it on the canvas.
+### 6.4 Gemini AI
 
-### 7.3 Failure behaviour
+Every 5 simulated seconds each junction sends its own snapshot and receives
+`{ junctionId, action, reason }` under a JSON response schema. The four
+junctions are queried in parallel. The prompt carries the junction's queues and
+longest waits, its phase state and green elapsed, the min/max green limits,
+adjacent junctions' queue pressure, and its own last two decisions — the last
+of these suppresses flip-flopping.
+
+Failure behaviour:
 
 | Situation | Behaviour |
 | --- | --- |
-| No API key configured | A local rule-based controller runs instead, labelled `HEURISTIC` in the log |
-| Request times out (4.5 s) or errors | The signal keeps its previous state; the state machine carries on. The simulation never blocks on the network |
-| Endpoint rejects the response schema (HTTP 400) | The schema is dropped and later calls go through on the prompt alone, with the same client-side validation |
-| Invalid action string returned | Rejected, treated as a failure, previous state kept |
-
-The heuristic fallback: serve any approach whose longest wait exceeds 25 s; otherwise serve
-whichever phase pair has more than 2 vehicles more in queue than the other; otherwise hold.
+| No API key | Local rule-based controller, labelled `HEURISTIC` |
+| Timeout (4.5 s) or error | Signal keeps its previous state; the simulation never blocks |
+| Schema rejected (HTTP 400) | Schema dropped, later calls run on the prompt with the same client-side validation |
+| Invalid action returned | Rejected, previous state kept |
 
 ---
 
-## 8. Assumptions and limitations
+## 7. Measurement
 
-Stated deliberately. Every one of these is a question a knowledgeable judge could ask, and the
-answer is better given first.
+| Quantity | Definition |
+| --- | --- |
+| **Control delay** (headline) | Actual travel time minus free-flow travel time for that vehicle's own top speed, accumulated on departure. The measure the profession uses for level of service |
+| **Stopped delay** | Seconds accumulated below 1 px/s. Reported separately, always smaller |
+| **Queue length** | Vehicles within 60 m upstream of the stop line moving below 8 km/h. "N approach" holds vehicles waiting north of the junction, travelling south |
+| **Queue in PCU** | The same queue weighted by PCU — what Max-Pressure and Webster use |
+| **Throughput** | Vehicles crossing a junction centre, counted once each; also reported network-wide per minute |
+| **Cross-traffic cost** | Vehicle-seconds accumulated by queued vehicles on approaches *not* served, while a priority corridor holds |
 
-**Calibration**
+Series for the charts are sampled once per simulated second and hold the last
+180 samples.
 
-- The spatial scale is currently a **visual** scale, not a surveyed one. At the stated 0.125 m per
-  px, junction spacing works out to about 45 m, which is short for an urban arterial where 200–500 m
-  is typical. Calibrating properly means choosing 0.5 m per px — giving 180 m spacing — and
-  simultaneously reducing `MAX_SPEED` to about 28 px/s (50 km/h), `ACCEL` to about 3 px/s²
-  (1.5 m/s²), `DECEL` to about 6 px/s² (3 m/s²) and `VEHICLE_LEN` to about 9 px (4.5 m). Until that
-  pass is done, absolute speeds and distances are illustrative and only the *relative* comparisons
-  between control strategies are meaningful.
-- There is no startup lost time at the beginning of green, so queues discharge slightly faster than
-  a real one would.
-- Saturation flow is an emergent property of the car-following parameters rather than a stated
-  design value. It should be measured and reported against the usual 1800 PCU/hour/lane figure.
+---
 
-**Traffic composition**
+## 8. Demand and determinism
 
-- All vehicles are identical. Real Indian traffic is heterogeneous and non-lane-based:
-  two-wheelers, auto-rickshaws, cars, buses and trucks with different footprints, acceleration and
-  PCU values. Adding vehicle classes is the highest-value realism improvement available.
-- No lane changing, no overtaking, no lateral movement within a lane.
+Eight entry lanes, one per direction per road. Headways are drawn uniformly
+from **4 to 12 seconds** and divided by the traffic-load multiplier, giving
+about 450 veh/h per lane at 1.0× against roughly 670 veh/h of capacity under
+the default plan — a volume-to-capacity ratio near 0.67. Busy but stable, with
+the slider able to push it into oversaturation.
 
-**Network behaviour**
+A spawn is suppressed if the entry is occupied or the 120-vehicle cap is
+reached; suppressed arrivals are dropped, not queued.
 
-- Vehicles travel straight through and never turn, so there are no turning conflicts and no
-  permitted-turn gap acceptance.
+**All randomness comes from one seeded generator.** Resetting with the same
+seed replays exactly the same arrivals, which is what makes plan comparison
+meaningful rather than noise. Verified: two runs from seed 12345 produce
+identical spawn and completion counts.
+
+### 8.1 Plan testing
+
+`BENCH.run()` resets to the seed, applies the current plan and controller, runs
+20 s of warm-up (discarded) plus 100 measured seconds at 8× speed, and records
+average control delay, throughput, peak queue and completions. Results
+accumulate in a table so the user can see their own tuning as a sequence of
+attempts, and the best result is marked.
+
+---
+
+## 9. Scenarios
+
+| Scenario | Model effect |
+| --- | --- |
+| **Accident** | One approach at one junction cannot discharge — its signal reads red regardless of phase. Queue spills back upstream |
+| **Flood** | A link's speeds drop to 45% and heavy vehicles (bus, truck) are barred from it by weight restriction |
+| **Surge** | Arrival rate on one axis multiplied by 2.6 |
+| **Signal failure** | One junction forced to a 45 s / 45 s cycle, unresponsive |
+| **Priority corridor** | Admission control, then a green hold on the requested phase across all junctions for 22 s, with a live cost ledger |
+
+### 9.1 Priority admission control
+
+A request is **refused** if a corridor is already running, or if the network
+queue exceeds 34 vehicles — the stated delay budget. Refusals are logged with
+the reason, which is the point: the tool shows *why* the network said no.
+
+### 9.2 The ledger
+
+- **Cost:** vehicle-seconds accumulated by cross-traffic queues while the hold
+  is active. Measured directly.
+- **Benefit:** the priority vehicle's own control delay, compared against the
+  average control delay of ordinary vehicles that completed **during the same
+  window** — same traffic, same conditions.
+
+Measured example from a headless run: priority vehicle saved 2.9 s against the
+6.3 s an ordinary vehicle was losing, and cross traffic paid 334
+vehicle-seconds. Under light traffic the trade is poor, and the tool says so.
+That honesty is the feature.
+
+**What is deliberately not modelled:** whether the request is genuine.
+Verification is a separate problem and out of scope here. This tool models what
+the network does with a request once it believes it.
+
+---
+
+## 10. Assumptions and limitations
+
+Stated first, so a judge does not have to find them.
+
+**Network**
+- Vehicles travel straight through and never turn. No turning conflicts, no
+  gap acceptance, no permitted turns.
+- Demand is independent random headways per entry, not an origin–destination
+  matrix, so there is **no route choice**. In the flood scenario, barred heavy
+  vehicles are removed from that entry rather than rerouted; the count is
+  reported, not hidden.
 - No pedestrians, no pedestrian phases, no cyclists.
-- Demand is generated by independent random headways per entry, not from an origin–destination
-  matrix, so there is no route choice and no diversion. This is the main thing to change before the
-  flooding and accident scenarios can be fully honest.
+- No lane changing or overtaking, and no lateral movement within a lane — real
+  non-lane-based traffic does all three. PCU weighting is the standard
+  approximation, not a substitute.
+
+**Control**
+- Offsets exist in the plan but only stagger the first cycle; full green-wave
+  progression across the corridor is not yet implemented.
+- Max-Pressure uses the upstream term only (§6.3).
 
 **Measurement**
-
-- Reported wait is **stopped delay** — time below 5 px/s — not **control delay**, which also counts
-  the deceleration and acceleration time attributable to the signal. Control delay is the measure
-  the profession uses for level of service, and it is strictly larger. The current figure is
-  therefore an underestimate.
+- Free-flow reference speed is per vehicle type and ignores the flood speed
+  reduction, so delay on a flooded link includes the flooding itself.
 
 **Comparison**
-
-- The AI-versus-fixed comparison runs sequentially on independently generated random demand, not on
-  the same random seed. Some of any observed difference is sampling noise. Same-seed replay is the
-  fix and it is the first item in the build plan.
-
----
-
-## 9. Observed behaviour
-
-A headless run of the simulation with the local heuristic controller, driven at a fixed 20 ms step
-for 120 simulated seconds:
-
-| Measure | Value |
-| --- | --- |
-| Vehicles generated | 235 |
-| Vehicles completed | 195 |
-| Population at end | 40 (at cap) |
-| Average wait per completed vehicle | 5.82 s |
-| Control decisions applied | 40 |
-| Per-junction throughput | 96 to 111 vehicles |
-
-The behaviour is stable — queues form on the red approach, discharge as a wave when green begins,
-and the phase pairs alternate without any junction being starved. Throughput within 8% across four
-junctions under symmetric demand is the expected result and a useful sanity check.
-
-Reproduce it by driving `SIM.onTick` from a fixed-step loop rather than `requestAnimationFrame`;
-no rendering is required, because the simulation has no dependency on the renderer.
+- Live mode switching compares cumulative averages across different periods.
+  Use the plan test, which is seeded and warm-up-corrected, for any number that
+  matters.
 
 ---
 
-## 10. What to swap for a 3D view
+## 11. Reproducing the numbers
 
-`render.js` is the only file that draws. It reads `SIM.junctions`, `SIM.vehicles`,
-`SIM.stats` and `AGENT.decisions` and writes nothing back except the user controls. A Three.js
-renderer that reads the same four things is a complete replacement; no simulation file changes.
-Vehicle positions are already plain `{x, y}` numbers in a fixed world space, which is why the swap
-is a substitution rather than a rewrite.
+The simulation has no dependency on the renderer, so it runs headless. Drive
+`SIM.onTick` from a fixed-step loop instead of `requestAnimationFrame` and read
+`SIM.stats`. A 120-second run under the default plan at 1.0× load gives roughly
+50 vehicles on the road, 16 queued, and 16.7 s average control delay; changing
+the plan to 25 s NS / 8 s EW on the same seed raises delay to about 21 s, which
+is the tool demonstrating its own premise.
+
+---
+
+## 12. Swapping to 3D
+
+`render.js` is the only file that draws. It reads `SIM.junctions`,
+`SIM.vehicles`, `SIM.series`, `SCENARIOS` state and `AGENT.decisions`, and
+writes nothing back except user controls. A Three.js renderer reading the same
+data is a complete replacement; no simulation file changes.
