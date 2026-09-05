@@ -19,3 +19,7 @@ tools/browser-check/node_modules/
 sumo/city/*.osm.xml
 sumo/city/*.trips.xml
 sumo/city/corridor.rou.xml
+
+# python bytecode
+__pycache__/
+*.pyc
