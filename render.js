@@ -441,8 +441,15 @@
     if (!lastHost) return;
     const d = AGENT.lastSupervised();
     if (!d) {
-      lastHost.innerHTML = '<p class="hint">No supervised decision yet. Switch the ' +
-        'controller to LLM AGENT and give it a few seconds.</p>';
+      // Say which of the three reasons it is, rather than one generic line -
+      // "no supervised decision yet" while the LLM agent is already driving
+      // reads like a bug when it is actually the budget doing its job.
+      let why;
+      if (!AGENT.hasKey()) why = 'No API key in config.js, so the local rule is driving.';
+      else if (SIM.controlMode() !== 'ai') why = 'Switch the controller to LLM AGENT to see one.';
+      else if (AGENT.coolingDown()) why = 'Rate limited — cooling down. The local rule is driving.';
+      else why = 'Waiting on the call budget. The local rule is driving in the meantime.';
+      lastHost.innerHTML = '<p class="hint">No supervised decision yet. ' + why + '</p>';
       return;
     }
     lastHost.innerHTML =
