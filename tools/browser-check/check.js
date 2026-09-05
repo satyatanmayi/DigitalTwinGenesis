@@ -165,6 +165,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const saidSomething = await street.$eval('#demo-say', (el) => el.textContent.length > 40);
     check('demo steps run and print what to say', saidSomething === true);
 
+    /* ---- the tabs: one job on screen at a time ---- */
+    const tabCount = await street.$$eval('.tab', (t) => t.length);
+    check('the sidebar is split into tabs', tabCount === 3, tabCount + ' tabs');
+
+    await street.click('.tab[data-pane="operate"]');
+    await sleep(400);
+    const paneVisible = await street.evaluate(() => {
+      const p = document.querySelector('.pane[data-pane="operate"]');
+      const q = document.querySelector('.pane[data-pane="plan"]');
+      return { operate: !p.hidden, plan: !q.hidden };
+    });
+    check('switching tab shows one pane and hides the others',
+          paneVisible.operate && !paneVisible.plan, JSON.stringify(paneVisible));
+
     /* ---- scenarios ---- */
     await street.click('#btn-accident');
     await sleep(400);
@@ -178,7 +192,70 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       Object.keys(SIM.conditions.floodedRoads).length);
     check('flood scenario marks a road', flooded > 0);
 
+    /* ---- the misuse attack: the answer to "what if someone abuses it" ---- */
     await street.click('#btn-normal');
+    await sleep(500);
+    await street.click('#btn-misuse');
+    await sleep(1200);
+    const misuse = await street.evaluate(() => {
+      const from7 = PRIORITY.requests.filter((r) => r.source === 'DEVICE-7');
+      return {
+        made: from7.length,
+        refused: from7.filter((r) => r.state === 'refused').length,
+        reason: from7.filter((r) => r.state === 'refused')
+                    .map((r) => r.reason)
+                    .find((t) => /DEVICE-7/.test(t)) ||
+                (from7.find((r) => r.state === 'refused') || {}).reason || ''
+      };
+    });
+    check('a burst from one source is rate limited',
+          misuse.made >= 5 && misuse.refused > 0,
+          misuse.refused + ' of ' + misuse.made + ' refused');
+    check('and the refusal names the source and the limit',
+          /DEVICE-7/.test(misuse.reason) && /limit/i.test(misuse.reason),
+          misuse.reason.slice(0, 90));
+
+    await street.click('#btn-normal');
+    await sleep(400);
+
+    /* ---- 3D ---- */
+    await street.click('#view-3d');
+    await sleep(2500);
+    const three = await street.evaluate(() => ({
+      available: typeof THREE !== 'undefined',
+      active: typeof RENDER3D !== 'undefined' && RENDER3D.isActive(),
+      canvases: document.querySelectorAll('#three-host canvas').length,
+      hidden: document.getElementById('three-host').hidden
+    }));
+    check('the 3D view starts and renders', three.active && three.canvases === 1 && !three.hidden,
+          JSON.stringify(three));
+    if (WANT_SHOTS) {
+      fs.mkdirSync(SHOT_DIR, { recursive: true });
+      await street.screenshot({ path: path.join(SHOT_DIR, 'street-3d.png') });
+    }
+    await street.click('#view-2d');
+    await sleep(800);
+    const back2d = await street.evaluate(() => RENDER3D.isActive());
+    check('and switches back to 2D cleanly', back2d === false);
+
+    /* ---- the QUBO panel ---- */
+    await street.click('.tab[data-pane="learn"]');
+    await sleep(400);
+    await street.click('#btn-qubo');
+    await sleep(1500);
+    const qubo = await street.evaluate(() => {
+      const out = document.getElementById('qubo-out').textContent;
+      return { text: out, rows: document.querySelectorAll('#qubo-out .qrow').length };
+    });
+    check('the QUBO solver runs and reports', qubo.rows >= 5, qubo.rows + ' rows');
+    check('and the annealer matches the exact optimum',
+          /annealer found it\?\s*yes/i.test(qubo.text.replace(/\s+/g, ' ')),
+          qubo.text.replace(/\s+/g, ' ').slice(0, 110));
+
+    const facts = await street.$$eval('#model-facts .fact', (f) => f.length);
+    check('the model panel shows how it was trained', facts >= 6, facts + ' facts');
+
+    await street.click('.tab[data-pane="operate"]');
     await sleep(400);
 
     if (WANT_SHOTS) {

@@ -106,6 +106,36 @@ const SCENARIOS = (function () {
     return req.state === 'granted';
   }
 
+  /** The abuse case a judge will raise: one source, pressed over and over.
+   *
+   *  Nothing here is stopped by trusting the requester - severity and
+   *  verification are inputs and could be lied about. What stops it is that the
+   *  network limits what any single source can consume, prices every grant, and
+   *  writes each attempt to a log with the source attached.
+   */
+  function misuseAttack(count) {
+    count = count || 8;
+    // An abuser presses the button in a busy network - that is when a granted
+    // corridor is worth stealing. Make sure there is traffic to steal from,
+    // otherwise every request is refused for being pointless rather than for
+    // being abusive, and the demo shows the wrong mechanism.
+    if (SIM.totalQueue() < 8) SIM.setSpawnRate(Math.max(SIM.spawnRate(), 1.6));
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      out.push(PRIORITY.submit({
+        source: 'DEVICE-7',
+        severity: 'S1',
+        verification: i % 3 === 0 ? 'unverified' : 'verified',
+        axis: i % 2 === 0 ? 'EW' : 'NS',
+        etaSec: 10 + i * 3
+      }));
+    }
+    const refused = out.filter(function (r) { return r.state === 'refused'; }).length;
+    note('refused', count + ' priority requests fired from a single source, DEVICE-7. ' +
+      refused + ' refused outright. Every attempt is logged against that source.');
+    return out;
+  }
+
   /** The headline case: two ambulances, one junction, opposite phases. */
   function twoAmbulances() {
     const pair = PRIORITY.demoConflict();
@@ -129,6 +159,7 @@ const SCENARIOS = (function () {
     signalFailure: signalFailure,
     requestCorridor: requestCorridor,
     twoAmbulances: twoAmbulances,
+    misuseAttack: misuseAttack,
     isCorridorActive: function () { return PRIORITY.active().length > 0; },
     corridorRemaining: function () {
       const holds = SIM.activeHolds();

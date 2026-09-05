@@ -3,231 +3,274 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Digital Twin Genesis — Signal Control Twin</title>
+  <title>The Street — Digital Twin Genesis</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
+
+<!-- ===================================================== top bar ========= -->
+<header id="topbar">
+  <span class="brand">DIGITAL TWIN <b>GENESIS</b></span>
+  <span class="brand-sub">The street</span>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-pane="plan" type="button">PLAN</button>
+    <button class="tab" data-pane="operate" type="button">OPERATE</button>
+    <button class="tab" data-pane="learn" type="button">MODEL</button>
+  </nav>
+
+  <div class="topbar-right">
+    <div class="viewtoggle" role="group" aria-label="View">
+      <button id="view-2d" class="vbtn active" type="button">2D</button>
+      <button id="view-3d" class="vbtn" type="button">3D</button>
+    </div>
+    <button id="btn-open-console" class="topbtn" type="button">CONTROL ROOM →</button>
+  </div>
+</header>
+
+<div id="shell">
+  <!-- ================================================== the world ======== -->
   <main id="stage">
     <div id="canvas-host"></div>
+    <div id="three-host" hidden></div>
 
     <div id="canvas-caption">
-      <span class="cap-title">CITY GRID — LIVE DIGITAL TWIN</span>
+      <span class="cap-title">FOUR JUNCTIONS · LIVE TWIN</span>
       <span class="cap-sub" id="cap-mode">FIXED-TIME PLAN</span>
     </div>
 
     <div id="hud">
-      <div class="hud-cell"><span class="hud-value" id="hud-delay">0.0s</span><span class="hud-label">AVG DELAY / VEHICLE</span></div>
-      <div class="hud-cell"><span class="hud-value" id="hud-queue">0</span><span class="hud-label">VEHICLES QUEUED</span></div>
-      <div class="hud-cell"><span class="hud-value" id="hud-thru">0</span><span class="hud-label">VEH/MIN THROUGHPUT</span></div>
-      <div class="hud-cell"><span class="hud-value" id="hud-clock">0:00</span><span class="hud-label">SIM CLOCK</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-delay">0.0s</span><span class="hud-label">AVG DELAY</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-queue">0</span><span class="hud-label">QUEUED</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-thru">0</span><span class="hud-label">VEH/MIN</span></div>
+      <div class="hud-cell"><span class="hud-value" id="hud-clock">0:00</span><span class="hud-label">CLOCK</span></div>
     </div>
 
     <p id="insight">Starting up.</p>
+    <p id="view-hint" hidden>drag to orbit · wheel to zoom · double-click to reset</p>
   </main>
 
+  <!-- ================================================== the controls ===== -->
   <aside id="sidebar">
-    <header id="brand">
-      <h1>DIGITAL TWIN <span>GENESIS</span></h1>
-      <p id="brand-sub">Signal timing twin · <span id="model-name">heuristic</span></p>
-    </header>
 
-    <!-- ------------------------------------------------ guided demo ----- -->
-    <section class="panel" id="demo-panel">
-      <h2>GUIDED DEMO</h2>
-      <div class="demo-steps">
-        <button class="step" data-step="1" type="button"><b>1</b> Normal day</button>
-        <button class="step" data-step="2" type="button"><b>2</b> Timing matters</button>
-        <button class="step" data-step="3" type="button"><b>3</b> The bad day</button>
-        <button class="step" data-step="4" type="button"><b>4</b> Two ambulances</button>
-        <button class="step" data-step="5" type="button"><b>5</b> Let the model drive</button>
-      </div>
-      <p class="hint" id="demo-say">Press 1 to start. Each step sets the scene and tells you what to say.</p>
-      <button id="btn-open-console" class="wide-btn" type="button">OPEN THE CONTROL ROOM WINDOW</button>
-    </section>
-
-    <!-- ------------------------------------------------ controller ------- -->
-    <section class="panel">
-      <h2>CONTROLLER</h2>
-      <div class="seg" role="group">
-        <button id="btn-plan" class="seg-btn active" type="button">FIXED PLAN</button>
-        <button id="btn-mp" class="seg-btn" type="button">MAX-PRESSURE</button>
-        <button id="btn-nn" class="seg-btn" type="button">TRAINED MODEL</button>
-        <button id="btn-ai" class="seg-btn" type="button">GEMINI AI</button>
-      </div>
-      <button id="btn-webster" class="wide-btn" type="button">APPLY WEBSTER OPTIMUM</button>
-      <p class="hint" id="webster-note">Webster computes the minimum-delay cycle from measured flows.</p>
-    </section>
-
-    <!-- ------------------------------------------------ signal timing ---- -->
-    <section class="panel">
-      <h2>SIGNAL TIMING</h2>
-      <label class="row" for="sel-junction">
-        <span>JUNCTION</span>
-        <select id="sel-junction" class="ctl-select">
-          <option value="ALL">ALL JUNCTIONS</option>
-          <option value="J1">J1</option>
-          <option value="J2">J2</option>
-          <option value="J3">J3</option>
-          <option value="J4">J4</option>
-        </select>
-      </label>
-      <label class="slider-row" for="green-ns">
-        <span>N–S GREEN</span>
-        <input id="green-ns" type="range" min="5" max="60" step="1" value="15">
-        <output id="green-ns-out">15s</output>
-      </label>
-      <label class="slider-row" for="green-ew">
-        <span>E–W GREEN</span>
-        <input id="green-ew" type="range" min="5" max="60" step="1" value="15">
-        <output id="green-ew-out">15s</output>
-      </label>
-      <p class="hint">Cycle <span id="cycle-out">38s</span> · yellow 3s · all-red 1s · min green 5s</p>
-    </section>
-
-    <!-- ------------------------------------------------ demand ----------- -->
-    <section class="panel">
-      <h2>DEMAND &amp; CLOCK</h2>
-      <label class="slider-row" for="spawn-rate">
-        <span>TRAFFIC LOAD</span>
-        <input id="spawn-rate" type="range" min="0.2" max="3" step="0.1" value="1">
-        <output id="spawn-rate-out">1.0x</output>
-      </label>
-      <label class="slider-row" for="sim-speed">
-        <span>SIM SPEED</span>
-        <input id="sim-speed" type="range" min="0.5" max="8" step="0.5" value="1">
-        <output id="sim-speed-out">1.0x</output>
-      </label>
-      <div class="btn-row">
-        <button id="btn-pause" class="ctl-btn" type="button">PAUSE</button>
-        <button id="btn-reset" class="ctl-btn" type="button">REPLAY SAME TRAFFIC</button>
-      </div>
-    </section>
-
-    <!-- ------------------------------------------------ plan testing ----- -->
-    <section class="panel">
-      <h2>FIND A BETTER PLAN</h2>
-      <button id="btn-test" class="wide-btn primary" type="button">TEST THIS PLAN — 100s</button>
-      <p class="hint">Every test replays identical traffic (seed <span id="seed-out">—</span>), so the difference is the plan, not luck.</p>
-      <div id="results"></div>
-    </section>
-
-    <!-- ------------------------------------------------ scenarios -------- -->
-    <section class="panel">
-      <h2>THE BAD DAY</h2>
-      <div class="grid2">
-        <button id="btn-normal" class="ctl-btn" type="button">NORMAL</button>
-        <button id="btn-accident" class="ctl-btn danger" type="button">ACCIDENT</button>
-        <button id="btn-flood" class="ctl-btn danger" type="button">FLOOD</button>
-        <button id="btn-surge" class="ctl-btn danger" type="button">SURGE</button>
-        <button id="btn-failure" class="ctl-btn danger" type="button">SIGNAL FAIL</button>
-        <button id="btn-corridor" class="ctl-btn accent" type="button">PRIORITY REQUEST</button>
-      </div>
-    </section>
-
-    <!-- ------------------------------------------------ dispatch -------- -->
-    <section class="panel">
-      <h2>DISPATCH A PRIORITY REQUEST</h2>
-      <div class="grid2">
-        <label class="row"><span>SEVERITY</span>
-          <select id="rq-sev" class="ctl-select">
-            <option value="S1">S1 critical</option>
-            <option value="S2">S2 urgent</option>
-            <option value="S3">S3 routine</option>
-          </select>
-        </label>
-        <label class="row"><span>SOURCE</span>
-          <select id="rq-ver" class="ctl-select">
-            <option value="verified">Verified</option>
-            <option value="unverified">Unverified</option>
-          </select>
-        </label>
-        <label class="row"><span>ROAD</span>
-          <select id="rq-axis" class="ctl-select">
-            <option value="EW">East–west</option>
-            <option value="NS">North–south</option>
-          </select>
-        </label>
-        <label class="row"><span>ON BOARD</span>
-          <select id="rq-persons" class="ctl-select">
-            <option value="1">1 patient</option>
-            <option value="8">8 (minibus)</option>
-            <option value="40">40 (bus)</option>
-          </select>
-        </label>
-      </div>
-      <div class="btn-row" style="grid-template-columns:1fr 1fr">
-        <button id="btn-send-req" class="ctl-btn accent" type="button">SEND REQUEST</button>
-        <button id="btn-two-amb" class="ctl-btn danger" type="button">TWO AMBULANCES</button>
-      </div>
-      <p class="hint" id="rq-note">Severity and verification arrive from outside this tool —
-        it decides what the network does with a request, not whether it is genuine.</p>
-    </section>
-
-    <!-- ------------------------------------------------ ledger ----------- -->
-    <section class="panel">
-      <h2>COST OF PRIORITY</h2>
-      <div class="ledger">
-        <div class="ledger-cell good">
-          <span class="ledger-value" id="led-saved">—</span>
-          <span class="ledger-label">SECONDS SAVED</span>
+    <!-- ---------------------------------------------------- PLAN --------- -->
+    <div class="pane" data-pane="plan">
+      <section class="panel" id="demo-panel">
+        <h2>GUIDED DEMO</h2>
+        <div class="demo-steps">
+          <button class="step" data-step="1" type="button"><b>1</b> Normal</button>
+          <button class="step" data-step="2" type="button"><b>2</b> Retime</button>
+          <button class="step" data-step="3" type="button"><b>3</b> Bad day</button>
+          <button class="step" data-step="4" type="button"><b>4</b> Two ambulances</button>
+          <button class="step" data-step="5" type="button"><b>5</b> Model</button>
         </div>
-        <div class="ledger-cell bad">
-          <span class="ledger-value" id="led-paid">0</span>
-          <span class="ledger-label">VEH-SEC PAID</span>
+        <p class="hint" id="demo-say">Press 1 to begin. Each step sets the scene and tells you what to say.</p>
+      </section>
+
+      <section class="panel">
+        <h2>SIGNAL TIMING</h2>
+        <label class="row" for="sel-junction">
+          <span>JUNCTION</span>
+          <select id="sel-junction" class="ctl-select">
+            <option value="ALL">All junctions</option>
+            <option value="J1">J1</option><option value="J2">J2</option>
+            <option value="J3">J3</option><option value="J4">J4</option>
+          </select>
+        </label>
+        <label class="slider-row" for="green-ns">
+          <span>N–S GREEN</span>
+          <input id="green-ns" type="range" min="5" max="60" step="1" value="18">
+          <output id="green-ns-out">18s</output>
+        </label>
+        <label class="slider-row" for="green-ew">
+          <span>E–W GREEN</span>
+          <input id="green-ew" type="range" min="5" max="60" step="1" value="18">
+          <output id="green-ew-out">18s</output>
+        </label>
+        <p class="hint">Cycle <span id="cycle-out">40s</span> · yellow 3s · all-red 1s · min green 10s</p>
+      </section>
+
+      <section class="panel">
+        <h2>IS IT ACTUALLY BETTER?</h2>
+        <button id="btn-test" class="wide-btn primary" type="button">TEST THIS PLAN — 100s</button>
+        <p class="hint">Every test replays the same traffic (seed <span id="seed-out">—</span>), so the
+          difference is the plan, not luck.</p>
+        <div id="results"></div>
+        <button id="btn-webster" class="wide-btn" type="button">SUGGEST A PLAN (WEBSTER 1958)</button>
+        <p class="hint" id="webster-note">The classical minimum-delay cycle, from the flows measured so far.</p>
+      </section>
+
+      <section class="panel">
+        <h2>TRAFFIC</h2>
+        <label class="slider-row" for="spawn-rate">
+          <span>LOAD</span>
+          <input id="spawn-rate" type="range" min="0.2" max="3" step="0.1" value="1">
+          <output id="spawn-rate-out">1.0x</output>
+        </label>
+        <label class="slider-row" for="sim-speed">
+          <span>SPEED</span>
+          <input id="sim-speed" type="range" min="0.5" max="8" step="0.5" value="1">
+          <output id="sim-speed-out">1.0x</output>
+        </label>
+        <div class="btn-row">
+          <button id="btn-pause" class="ctl-btn" type="button">PAUSE</button>
+          <button id="btn-reset" class="ctl-btn" type="button">REPLAY SAME TRAFFIC</button>
         </div>
-      </div>
-      <p class="hint" id="led-note">Granted 0 · refused 0. Cross-traffic cost is measured while a corridor holds.</p>
-    </section>
+      </section>
+    </div>
 
-    <!-- ------------------------------------------------ charts ----------- -->
-    <section class="panel">
-      <h2>RESPONSE OVER TIME</h2>
-      <canvas id="chart-delay" class="chart" width="360" height="80"></canvas>
-      <p class="chart-cap">Average delay per vehicle (s)</p>
-      <canvas id="chart-queue" class="chart" width="360" height="80"></canvas>
-      <p class="chart-cap">Vehicles queued, whole network</p>
-    </section>
+    <!-- ---------------------------------------------------- OPERATE ------ -->
+    <div class="pane" data-pane="operate" hidden>
+      <section class="panel">
+        <h2>THE BAD DAY</h2>
+        <div class="grid2">
+          <button id="btn-normal" class="ctl-btn" type="button">ALL CLEAR</button>
+          <button id="btn-accident" class="ctl-btn danger" type="button">ACCIDENT</button>
+          <button id="btn-flood" class="ctl-btn danger" type="button">FLOOD</button>
+          <button id="btn-surge" class="ctl-btn danger" type="button">SURGE</button>
+          <button id="btn-failure" class="ctl-btn danger" type="button">SIGNAL FAIL</button>
+          <button id="btn-misuse" class="ctl-btn danger" type="button">MISUSE ATTACK</button>
+        </div>
+        <p class="hint">Misuse fires a burst of requests from one source, the way an abuser
+          would. Watch the network refuse them, with reasons.</p>
+      </section>
 
-    <!-- ------------------------------------------------ junctions -------- -->
-    <section class="panel">
-      <h2>JUNCTION QUEUES</h2>
-      <div id="junction-cards"></div>
-    </section>
+      <section class="panel">
+        <h2>DISPATCH A PRIORITY REQUEST</h2>
+        <div class="grid2">
+          <label class="row"><span>SEVERITY</span>
+            <select id="rq-sev" class="ctl-select">
+              <option value="S1">S1 critical</option>
+              <option value="S2">S2 urgent</option>
+              <option value="S3">S3 routine</option>
+            </select>
+          </label>
+          <label class="row"><span>SOURCE</span>
+            <select id="rq-ver" class="ctl-select">
+              <option value="verified">Verified</option>
+              <option value="unverified">Unverified</option>
+            </select>
+          </label>
+          <label class="row"><span>ROAD</span>
+            <select id="rq-axis" class="ctl-select">
+              <option value="EW">East–west</option>
+              <option value="NS">North–south</option>
+            </select>
+          </label>
+          <label class="row"><span>ON BOARD</span>
+            <select id="rq-persons" class="ctl-select">
+              <option value="1">1 patient</option>
+              <option value="8">8 people</option>
+              <option value="40">40 (bus)</option>
+            </select>
+          </label>
+        </div>
+        <div class="btn-row" style="grid-template-columns:1fr 1fr">
+          <button id="btn-send-req" class="ctl-btn accent" type="button">SEND REQUEST</button>
+          <button id="btn-two-amb" class="ctl-btn danger" type="button">TWO AMBULANCES</button>
+        </div>
+        <button id="btn-corridor" class="wide-btn" type="button" hidden>corridor</button>
+        <p class="hint" id="rq-note">Severity and verification arrive from outside this tool.
+          It decides what the network does with a request, not whether it is genuine.</p>
+      </section>
 
-    <!-- ------------------------------------------------ log -------------- -->
-    <section class="panel">
-      <h2>DECISION &amp; EVENT LOG</h2>
-      <div id="decision-log"></div>
-    </section>
+      <section class="panel">
+        <h2>COST OF PRIORITY</h2>
+        <div class="ledger">
+          <div class="ledger-cell good">
+            <span class="ledger-value" id="led-saved">—</span>
+            <span class="ledger-label">SECONDS SAVED</span>
+          </div>
+          <div class="ledger-cell bad">
+            <span class="ledger-value" id="led-paid">0</span>
+            <span class="ledger-label">VEH-SEC PAID</span>
+          </div>
+        </div>
+        <p class="hint" id="led-note">Granted 0 · refused 0.</p>
+      </section>
 
-    <section class="panel">
-      <h2>SYSTEM</h2>
-      <div class="stat-grid">
-        <div class="stat"><span class="stat-value" id="stat-processed">0</span><span class="stat-label">COMPLETED</span></div>
-        <div class="stat"><span class="stat-value" id="stat-stop">0.0s</span><span class="stat-label">STOP DELAY</span></div>
-        <div class="stat"><span class="stat-value" id="stat-active">0</span><span class="stat-label">ON ROAD</span></div>
-        <div class="stat"><span class="stat-value" id="stat-latency">—</span><span class="stat-label">API LATENCY</span></div>
-      </div>
-      <p class="source-note" id="source-note">Controller: fixed-time plan</p>
-    </section>
+      <section class="panel">
+        <h2>QUEUES BY APPROACH</h2>
+        <div id="junction-cards"></div>
+      </section>
+
+      <section class="panel">
+        <h2>DECISION &amp; EVENT LOG</h2>
+        <div id="decision-log"></div>
+      </section>
+    </div>
+
+    <!-- ---------------------------------------------------- MODEL -------- -->
+    <div class="pane" data-pane="learn" hidden>
+      <section class="panel">
+        <h2>WHO IS DRIVING</h2>
+        <div class="seg" role="group">
+          <button id="btn-plan" class="seg-btn active" type="button">FIXED PLAN</button>
+          <button id="btn-mp" class="seg-btn" type="button">MAX-PRESSURE</button>
+          <button id="btn-nn" class="seg-btn" type="button">TRAINED MODEL</button>
+          <button id="btn-ai" class="seg-btn" type="button">LLM AGENT</button>
+        </div>
+        <p class="hint" id="controller-note">Each writes through one function, with the safety
+          limits underneath it. Nothing here can starve an approach or skip a yellow.</p>
+      </section>
+
+      <section class="panel" id="model-panel">
+        <h2>THE TRAINED MODEL</h2>
+        <div id="model-facts" class="factlist"></div>
+        <canvas id="chart-q" class="chart" width="360" height="70"></canvas>
+        <p class="chart-cap">Model preference over time: hold above the line, switch below</p>
+      </section>
+
+      <section class="panel" id="quantum-panel">
+        <h2>QUANTUM-READY PHASE CHOICE</h2>
+        <p class="hint">The same decision written as a QUBO — the form a quantum annealer
+          accepts — solved here classically by simulated annealing.</p>
+        <button id="btn-qubo" class="wide-btn" type="button">SOLVE THE NETWORK AS A QUBO</button>
+        <div id="qubo-out"></div>
+      </section>
+
+      <section class="panel">
+        <h2>RESPONSE OVER TIME</h2>
+        <canvas id="chart-delay" class="chart" width="360" height="76"></canvas>
+        <p class="chart-cap">Average delay per vehicle (s)</p>
+        <canvas id="chart-queue" class="chart" width="360" height="76"></canvas>
+        <p class="chart-cap">Vehicles queued, whole network</p>
+      </section>
+
+      <section class="panel">
+        <h2>SYSTEM</h2>
+        <div class="stat-grid">
+          <div class="stat"><span class="stat-value" id="stat-processed">0</span><span class="stat-label">DONE</span></div>
+          <div class="stat"><span class="stat-value" id="stat-stop">0.0s</span><span class="stat-label">STOP DELAY</span></div>
+          <div class="stat"><span class="stat-value" id="stat-active">0</span><span class="stat-label">ON ROAD</span></div>
+          <div class="stat"><span class="stat-value" id="stat-latency">—</span><span class="stat-label">LLM</span></div>
+        </div>
+        <p class="source-note" id="source-note">Controller: fixed-time plan</p>
+        <p class="hint">Model in use: <span id="model-name">heuristic</span></p>
+      </section>
+    </div>
   </aside>
+</div>
 
-  <!-- State first, then data, then control, then the renderer. -->
-  <script src="config.js"></script>
-  <script src="link.js"></script>
-  <script src="sim.js"></script>
-  <script src="features.js"></script>
-  <script src="sensorFeed.js"></script>
-  <script src="controllers.js"></script>
-  <script src="priority.js"></script>
-  <script src="scenarios.js"></script>
-  <script src="bench.js"></script>
-  <script src="weights.js"></script>
-  <script src="nn.js"></script>
-  <script src="agent.js"></script>
-  <script src="coordinator.js"></script>
-  <script src="publish.js"></script>
-  <script src="render.js"></script>
+<!-- load order: state, then data, then control, then the two renderers -->
+<script src="config.js"></script>
+<script src="link.js"></script>
+<script src="sim.js"></script>
+<script src="features.js"></script>
+<script src="sensorFeed.js"></script>
+<script src="controllers.js"></script>
+<script src="priority.js"></script>
+<script src="scenarios.js"></script>
+<script src="bench.js"></script>
+<script src="quantum.js"></script>
+<script src="weights.js"></script>
+<script src="nn.js"></script>
+<script src="agent.js"></script>
+<script src="coordinator.js"></script>
+<script src="publish.js"></script>
+<script src="render3d.js"></script>
+<script src="render.js"></script>
 </body>
 </html>

@@ -40,6 +40,9 @@ const PRIORITY = (function () {
     preemptMargin: 1.35,         // how much better a newcomer must be to take over
     minScore: 0.25,              // below this, a request is not worth granting
     lookaheadSec: 45,            // how far ahead we warn about a coming conflict
+    perSourceGrants: 2,          // grants one source may hold in the window below
+    perSourceWindowSec: 240,     // the window that limit is measured over
+    perSourceRequests: 5,        // requests one source may even make in that window
     feasibleEtaSec: [2, 120],    // outside this window a grant is wasted
     giveUpSec: 150               // stop trying after this long queued
   };
@@ -50,6 +53,29 @@ const PRIORITY = (function () {
   const requests = [];           // every request this session, newest last
   const log = [];                // newest first
   const conflicts = [];          // currently predicted conflicts
+
+  /* -------------------------------------------------------- abuse control
+   * The obvious attack on any priority system is volume: one source asking
+   * over and over until something is granted. Severity and verification come
+   * from outside and could be lied about, so the network does not rely on them
+   * alone - it also limits what any single source can consume, regardless of
+   * what that source claims about itself.
+   *
+   * This is why the honest answer to "what if someone misuses the button" is
+   * not "they cannot" - it is "they get two, then the network stops listening,
+   * and every attempt is in the log with the source attached".
+   */
+  function sourceHistory(source) {
+    const now = SIM.time();
+    const window = now - POLICY.perSourceWindowSec;
+    let asked = 0, granted = 0;
+    for (const r of requests) {
+      if (r.source !== source || r.requestedAt < window) continue;
+      asked++;
+      if (r.state === 'granted' || r.state === 'completed') granted++;
+    }
+    return { asked: asked, granted: granted };
+  }
 
   function note(kind, requestId, text) {
     log.unshift({ kind: kind, requestId: requestId, text: text, at: SIM.time(), wall: new Date() });
@@ -148,6 +174,21 @@ const PRIORITY = (function () {
   function decide(req) {
     const score = scoreOf(req);
     const active = requests.filter(function (r) { return r.state === 'granted'; });
+
+    // Abuse control comes first, before anything the requester claims about
+    // itself is even considered.
+    const hist = sourceHistory(req.source);
+    if (hist.granted > POLICY.perSourceGrants) {
+      return refuse(req, 'Source ' + req.source + ' has already been granted ' +
+        (hist.granted - 1) + ' corridors in the last ' + POLICY.perSourceWindowSec +
+        's. The per-source limit is ' + POLICY.perSourceGrants +
+        '. Escalated for human review.');
+    }
+    if (hist.asked > POLICY.perSourceRequests) {
+      return refuse(req, 'Source ' + req.source + ' has made ' + hist.asked +
+        ' requests in ' + POLICY.perSourceWindowSec + 's, over the limit of ' +
+        POLICY.perSourceRequests + '. Rate limited, and logged against the source.');
+    }
 
     // A request that has already waited too long is given up on, so the book
     // does not fill with vehicles that arrived long ago.
@@ -370,6 +411,7 @@ const PRIORITY = (function () {
     opts = opts || {};
     const req = {
       id: 'REQ-' + String(nextId).padStart(3, '0'),
+      source: opts.source || 'DISPATCH',
       severity: opts.severity || 'S1',
       verification: opts.verification || 'verified',
       vehicleType: opts.vehicleType || 'ambulance',
@@ -387,9 +429,9 @@ const PRIORITY = (function () {
     };
     nextId++;
     requests.push(req);
-    note('received', req.id, req.id + ' received — ' + req.severity + ', ' +
-      req.verification + ', ' + req.vehicleType + ', arriving in ' +
-      req.etaSec.toFixed(0) + 's on the ' + req.axis + ' axis.');
+    note('received', req.id, req.id + ' received from ' + req.source + ' — ' +
+      req.severity + ', ' + req.verification + ', ' + req.vehicleType +
+      ', arriving in ' + req.etaSec.toFixed(0) + 's on the ' + req.axis + ' axis.');
     predictConflicts();
     decide(req);
     return req;
@@ -446,6 +488,7 @@ const PRIORITY = (function () {
     active: function () { return requests.filter(function (r) { return r.state === 'granted'; }); },
     pending: function () { return requests.filter(function (r) { return r.state === 'pending' || r.state === 'queued'; }); },
     byId: function (id) { for (const r of requests) if (r.id === id) return r; return null; },
+    sourceHistory: sourceHistory,
     estimateSecondsSaved: estimateSecondsSaved,
     estimateCost: estimateCost,
     reset: reset

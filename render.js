@@ -56,6 +56,17 @@
 
   /* ------------------------------------------------------------------- draw */
   window.draw = function () {
+    // When the 3D view is on, the p5 canvas is hidden and Three.js draws the
+    // same state instead. The sidebar still updates either way, because it
+    // reads SIM, not the canvas.
+    if (typeof RENDER3D !== 'undefined' && RENDER3D.isActive()) {
+      RENDER3D.frame();
+      tick++;
+      if (tick % 5 === 0) updateSidebar();
+      if (tick % 15 === 0) drawCharts();
+      return;
+    }
+
     background(C.bg);
     computeTransform();
 
@@ -75,8 +86,14 @@
 
     tick++;
     if (tick % 5 === 0) updateSidebar();
-    if (tick % 15 === 0) { drawChart('chart-delay', SIM.series.avgDelay, C.accent); drawChart('chart-queue', SIM.series.totalQueue, C.warn); }
+    if (tick % 15 === 0) drawCharts();
   };
+
+  function drawCharts() {
+    drawChart('chart-delay', SIM.series.avgDelay, C.accent);
+    drawChart('chart-queue', SIM.series.totalQueue, C.warn);
+    drawModelChart();
+  }
 
   function drawBackdrop() {
     noStroke(); fill(C.grid);
@@ -318,6 +335,78 @@
     ctx.fillText(data[data.length - 1].toFixed(1), w - 34, 11);
   }
 
+  /* ------------------------------------------------------------ model panel
+   * What the trained model is thinking, in two forms: the facts about how it
+   * was made, and a running trace of how strongly it prefers holding over
+   * switching at the moment.
+   */
+  const qTrace = [];
+
+  function drawModelChart() {
+    const cv = document.getElementById('chart-q');
+    if (!cv || typeof NN === 'undefined' || !NN.isReady()) return;
+    const j = SIM.junctions[0];
+    if (!j) return;
+    const q = NN.scoreJunction(j);
+    if (q) {
+      qTrace.push(q.hold - q.switchTo);
+      if (qTrace.length > 160) qTrace.shift();
+    }
+
+    const ctx = cv.getContext('2d');
+    const w = cv.width, h = cv.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#0d1220'; ctx.fillRect(0, 0, w, h);
+    if (qTrace.length < 2) return;
+
+    let m = 0.5;
+    for (const v of qTrace) m = Math.max(m, Math.abs(v));
+
+    ctx.strokeStyle = '#2a3444'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+
+    ctx.strokeStyle = C.accent; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i < qTrace.length; i++) {
+      const x = (i / (qTrace.length - 1)) * w;
+      const y = h / 2 - (qTrace[i] / m) * (h / 2 - 4);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    ctx.fillStyle = '#93a2b8';
+    ctx.font = '10px Consolas, monospace';
+    ctx.fillText('hold', 5, 11);
+    ctx.fillText('switch', 5, h - 4);
+  }
+
+  function renderModelFacts() {
+    const host = document.getElementById('model-facts');
+    if (!host) return;
+    if (typeof NN === 'undefined' || !NN.isReady()) {
+      host.innerHTML = '<p class="hint">No trained weights loaded. ' +
+        (typeof NN !== 'undefined' && NN.error() ? esc(NN.error()) : 'weights.js missing') +
+        '</p>';
+      return;
+    }
+    const m = NN.meta() || {};
+    const ev = m.evaluation || {};
+    const rows = [
+      ['trained on', (m.episodes || '?') + ' episodes inside this simulator'],
+      ['method', m.method === 'mc' ? 'Monte-Carlo returns' : (m.method || 'dqn')],
+      ['input', (m.stateLayout ? m.stateLayout.length : FEATURES.SIZE) + ' numbers per junction'],
+      ['decides', 'hold or switch, every ' + NN.DECISION_SEC + 's'],
+      ['fixed plan', ev.fixedDelay ? ev.fixedDelay.toFixed(1) + 's delay' : '—'],
+      ['max-pressure', ev.maxPressureDelay ? ev.maxPressureDelay.toFixed(1) + 's delay' : '—'],
+      ['this model', ev.modelDelay ? ev.modelDelay.toFixed(1) + 's delay' : '—'],
+      ['verdict', ev.changePct ? ev.changePct.toFixed(1) + '% better than fixed' : '—']
+    ];
+    host.innerHTML = rows.map(function (r) {
+      const good = r[0] === 'verdict' || r[0] === 'this model';
+      return '<div class="fact' + (good ? ' good' : '') + '"><span>' + r[0] +
+             '</span><b>' + escapeHtml(String(r[1])) + '</b></div>';
+    }).join('');
+  }
+
   /* ---------------------------------------------------------------- sidebar */
   let cardsBuilt = false;
 
@@ -485,6 +574,14 @@
     for (const id in modes) {
       document.getElementById(id).addEventListener('click', function () {
         SIM.setControlMode(modes[id]);
+        const notes = {
+          plan: 'A fixed plan is round robin: equal slices whether or not anyone is waiting.',
+          maxpressure: 'Serves whichever phase has the most queued PCU, with hysteresis so it cannot thrash.',
+          nn: 'The trained model: hold or switch every 5s, from 8 numbers per junction.',
+          ai: 'A language model proposing actions, validated by a second pass, with a rule-based fallback.'
+        };
+        const note = document.getElementById('controller-note');
+        if (note) note.textContent = notes[modes[id]] || '';
         for (const other in modes) document.getElementById(other).classList.toggle('active', other === id);
         document.getElementById('cap-mode').textContent = caps[modes[id]];
       });
@@ -654,6 +751,94 @@
 
     document.getElementById('btn-open-console').addEventListener('click', function () {
       window.open('console.html', 'dtg-console', 'width=1280,height=900');
+    });
+
+    /* ---- tabs: one job on screen at a time ------------------------------ */
+    document.querySelectorAll('.tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        const want = tab.dataset.pane;
+        document.querySelectorAll('.tab').forEach(function (t) {
+          t.classList.toggle('active', t === tab);
+        });
+        document.querySelectorAll('.pane').forEach(function (p) {
+          p.hidden = (p.dataset.pane !== want);
+        });
+        if (want === 'learn') renderModelFacts();
+      });
+    });
+
+    /* ---- 2D / 3D ------------------------------------------------------- */
+    const b2d = document.getElementById('view-2d');
+    const b3d = document.getElementById('view-3d');
+    const host2d = document.getElementById('canvas-host');
+    const host3d = document.getElementById('three-host');
+    const hint = document.getElementById('view-hint');
+
+    function setView(three) {
+      if (three) {
+        if (!RENDER3D.isAvailable()) {
+          document.getElementById('demo-say').textContent =
+            'The 3D view needs three.js, which did not load. The 2D view has everything.';
+          return;
+        }
+        host3d.hidden = false;
+        const ok = RENDER3D.enable();
+        if (!ok) { host3d.hidden = true; return; }
+        host2d.style.visibility = 'hidden';
+      } else {
+        RENDER3D.disable();
+        host3d.hidden = true;
+        host2d.style.visibility = 'visible';
+      }
+      hint.hidden = !three;
+      b2d.classList.toggle('active', !three);
+      b3d.classList.toggle('active', three);
+    }
+    b2d.addEventListener('click', function () { setView(false); });
+    b3d.addEventListener('click', function () { setView(true); });
+
+    /* ---- misuse attack -------------------------------------------------- */
+    document.getElementById('btn-misuse').addEventListener('click', function () {
+      const out = SCENARIOS.misuseAttack(8);
+      const refused = out.filter(function (r) { return r.state === 'refused'; }).length;
+      document.getElementById('rq-note').textContent =
+        'DEVICE-7 fired ' + out.length + ' requests. ' + refused +
+        ' refused outright, and every attempt is logged against that source. ' +
+        'Nothing here depends on trusting what the requester says about itself.';
+    });
+
+    /* ---- the QUBO panel -------------------------------------------------- */
+    document.getElementById('btn-qubo').addEventListener('click', function () {
+      const r = QUANTUM.solve();
+      const host = document.getElementById('qubo-out');
+      const agree = JSON.stringify(r.solution) === JSON.stringify(r.greedy);
+      host.innerHTML =
+        '<div class="qrow"><span>variables</span><b>' + r.variables + ' binary</b></div>' +
+        '<div class="qrow"><span>search space</span><b>2^' + r.variables + ' = ' +
+          r.bruteForceStates + ' states</b></div>' +
+        '<div class="qrow"><span>annealed energy</span><b>' + r.energy.toFixed(2) + '</b></div>' +
+        '<div class="qrow"><span>exact optimum</span><b>' +
+          (r.exactEnergy === null ? 'n/a' : r.exactEnergy.toFixed(2)) + '</b></div>' +
+        '<div class="qrow ' + (r.matchedOptimum ? 'good' : 'bad') + '"><span>annealer found it?</span><b>' +
+          (r.matchedOptimum ? 'yes' : 'no') + '</b></div>' +
+        '<div class="qrow"><span>time</span><b>' + r.annealMs.toFixed(1) + ' ms anneal · ' +
+          r.bruteForceMs.toFixed(1) + ' ms exact</b></div>' +
+        '<div class="qsol">' + Object.keys(r.solution).map(function (id) {
+            return id + '&rarr;' + r.solution[id];
+          }).join(' &nbsp; ') + '</div>' +
+        '<p class="hint">' + (agree
+            ? 'Here it agrees with the one-junction-at-a-time answer. It stops agreeing when serving a neighbour matters more than serving yourself.'
+            : 'Note this differs from the greedy per-junction answer: ' +
+              Object.keys(r.greedy).map(function (id) { return id + '&rarr;' + r.greedy[id]; }).join(' ') +
+              '. That difference is the coordination term.') +
+        '</p>' +
+        '<button id="btn-qubo-apply" class="wide-btn" type="button">APPLY THIS SOLUTION</button>';
+      document.getElementById('btn-qubo-apply').addEventListener('click', function () {
+        const n = QUANTUM.apply(r.solution);
+        document.getElementById('qubo-out').insertAdjacentHTML('beforeend',
+          '<p class="hint">Applied: ' + n + ' junction' + (n === 1 ? '' : 's') +
+          ' asked to switch, through the same safety-checked function as every other controller.</p>');
+      });
     });
 
     window.addEventListener('keydown', function (e) {
