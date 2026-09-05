@@ -4,8 +4,10 @@
 assumption stated. This is the document to answer a jury question from — "how
 does it work" and "why should I believe it" are both answered here.*
 
-Describes the code in `sim.js`, `sensorFeed.js`, `controllers.js`,
-`scenarios.js`, `bench.js` and `agent.js`.
+Describes the code in `sim.js`, `features.js`, `sensorFeed.js`,
+`controllers.js`, `priority.js`, `scenarios.js`, `bench.js`, `nn.js` and
+`agent.js`. For a file-by-file walkthrough aimed at answering questions live,
+see [`CODE_TOUR.md`](CODE_TOUR.md).
 
 ---
 
@@ -18,8 +20,12 @@ Describes the code in `sim.js`, `sensorFeed.js`, `controllers.js`,
 | Classical control | `controllers.js` | Webster cycle computation, Max-Pressure control |
 | Disruption | `scenarios.js` | Accident, flood, surge, signal failure, priority corridor and its ledger |
 | Evaluation | `bench.js` | Seeded plan testing, plain-language insight |
+| Arbitration | `priority.js` | Competing priority requests: scoring, conflict, ledger |
+| Model input | `features.js` | The single definition of what the model sees |
+| Trained control | `nn.js` | The learned policy, running in the browser |
 | AI control | `agent.js` | Per-junction Gemini decisions, local heuristic fallback |
-| View | `render.js` | Draws. Computes nothing |
+| Wire | `link.js`, `publish.js` | Street to control room, two windows, no server |
+| View | `render.js`, `console.js` | Draw. Compute nothing |
 
 Every controller — fixed plan, Webster, Max-Pressure, Gemini — writes signals
 through **one** function, `SIM.applyAction()`. The safety guarantees in §4.3
@@ -187,9 +193,16 @@ no cycle length fixes a junction that is over capacity.
 
 ### 6.3 Max-Pressure
 
-Pressure of a phase = total queued PCU on the approaches it serves. After
-minimum green, if the other phase's pressure exceeds the running phase's by
-more than 1.0 PCU, switch.
+Pressure of a phase = total queued PCU on the approaches it serves. A switch
+requires three things at once: at least 10 s of service on the running phase, a
+pressure advantage of more than 2.5 PCU on the other one, and a decision point
+(they are taken every 2 s, not on every physics tick).
+
+Those guards matter more than the rule. Every phase change costs 3 s of yellow
+plus 1 s of all-red — four seconds that serve nobody — so a controller that
+switches whenever the pressure difference changes sign destroys more capacity
+than it gains. An earlier version re-decided on every tick and finished behind
+a fixed plan because of exactly that.
 
 **Stated simplification:** the textbook formulation subtracts downstream queue
 from upstream queue. Here vehicles leave at the network boundary, so the
@@ -199,7 +212,22 @@ Max-Pressure is the standard baseline in the RL signal-control literature —
 learned methods in the RESCO benchmark beat it by roughly 11–13%, which makes
 it a strong opponent, not a straw man.
 
-### 6.4 Gemini AI
+### 6.4 The trained model
+
+An 8-input, 2-output network (64 and 48 hidden units, ReLU) trained by
+Monte-Carlo regression against this simulator — see `tools/train.py` and
+`docs/BUILD_REPORT.md`. Every 5 s it scores *hold* against *switch* per junction
+and takes the better one, through `SIM.applyAction()` like everything else.
+
+Measured on held-out seeds, identical traffic, 360 s window, demand biased 2×
+toward one axis: fixed plan 35.28 s, Max-Pressure 31.95 s, trained model
+31.46 s.
+
+**The envelope, stated plainly:** under symmetric steady demand no adaptive
+controller beats an equal split, because of the switching cost above. Adaptive
+control pays when demand is asymmetric and below saturation.
+
+### 6.5 Gemini AI
 
 Every 5 simulated seconds each junction sends its own snapshot and receives
 `{ junctionId, action, reason }` under a JSON response schema. The four
