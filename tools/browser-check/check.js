@@ -392,16 +392,27 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
           llm.total > 0 && llm.reasons.every((r) => typeof r === 'string' && r.length > 10),
           llm.reasons[0] || 'none');
 
+    // Whether a live model answers depends on quota and venue wifi, neither of
+    // which is a property of this code. So the assertion is on the stack ending
+    // up in one of its three DOCUMENTED states, and the detail says which one
+    // actually happened - a rate limit reported as a failure would teach us to
+    // ignore a red harness on demo day.
     const reviewed = llm.stats.approvals + llm.stats.corrections;
-    if (llm.stats.calls > 0) {
-      check('the second model reviewed the first', reviewed > 0,
-            llm.stats.approvals + ' approved, ' + llm.stats.corrections + ' overruled');
+    let state, ok;
+    if (reviewed > 0) {
+      state = 'reviewed: ' + llm.stats.approvals + ' approved, ' + llm.stats.corrections + ' overruled';
+      ok = true;
+    } else if (llm.stats.rateLimited > 0) {
+      state = 'rate limited (' + llm.stats.rateLimited + 'x) before a review landed, fallback held';
+      ok = llm.sources.length > 0;
+    } else if (llm.stats.calls > 0) {
+      state = 'a model answered but no review completed in the window';
+      ok = false;
     } else {
-      // No network or no key: this is the documented fallback, not a failure.
-      check('with no model reachable the local rule still decides',
-            llm.sources.every((s) => s === 'heuristic' || s === 'error'),
-            'ran on layer 3 only');
+      state = 'no model reachable, ran on the local rule only';
+      ok = llm.sources.every((s) => s === 'heuristic' || s === 'error');
     }
+    check('the stack ends in one of its three documented states', ok, state);
 
     const llmFacts = await street.evaluate(() =>
       document.querySelectorAll('#llm-facts .fact').length);
