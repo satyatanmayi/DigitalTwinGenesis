@@ -68,6 +68,26 @@ and measurements are kept visibly separate.
 Two windows talk over `BroadcastChannel`, with a `localStorage` fallback, so it
 works with no server and from a `file://` URL.
 
+### The SUMO track — `sumo/`
+
+A second, standalone experiment on a real microsimulator with PyTorch. Five
+held-out scenarios, one ambulance each:
+
+| Controller | Ambulance waiting | Ambulance travel | Everyone else |
+| --- | --- | --- | --- |
+| Fixed 30 s / 30 s | 12.0 s | 47 s | 4,680 veh-s |
+| Max-Pressure | 13.2 s | 50 s | 6,746 veh-s |
+| **Trained model** | **0.0 s** | **32 s** | 4,830 veh-s |
+
+The ambulance never stopped once. See `sumo/README.md`, which also teaches the
+neural network from `xor_test.py` upward.
+
+### Browser verification — `tools/browser-check/`
+
+`node tools/browser-check/check.js --shots` opens both pages in headless
+Chromium, drives them, and fails on any script error. **25 checks, all green.**
+It also writes the screenshots in `docs/screenshots/`.
+
 ### Tests — `tests/run.js`
 
 `node tests/run.js` → **21 passed, 0 failed**, about 40 seconds. Reproducibility,
