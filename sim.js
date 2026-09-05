@@ -71,7 +71,7 @@ const SIM = (function () {
   const SIGNAL = {
     yellow: 3.0,
     allRed: 1.0,
-    minGreen: 5,
+    minGreen: 10,
     maxGreen: 60,
     defaultGreenNS: 18,
     defaultGreenEW: 18,
@@ -109,7 +109,7 @@ const SIM = (function () {
   let paused = false;
   let spawnRate = 1.0;
   let speedScale = 1.0;          // simulation speed multiplier
-  let controlMode = 'plan';      // 'plan' | 'ai' | 'maxpressure'
+  let controlMode = 'plan';      // 'plan' | 'ai' | 'maxpressure' | 'nn'
   let simTime = 0;
   let lastFrameMs = 0;
   let running = false;
@@ -602,6 +602,9 @@ const SIM = (function () {
 
     start: start,
     reset: reset,
+    /** Advance the world by dt seconds. Used by the headless trainer in
+     *  tools/env-server.js, so training runs against this exact physics. */
+    advance: function (dt) { step(dt); },
     onTick: function (fn) { tickListeners.push(fn); },
 
     get junctions() { return junctions; },
@@ -650,12 +653,13 @@ const SIM = (function () {
     spawnPoints: function () { return spawnPoints; },
     controlMode: function () { return controlMode; },
     setControlMode: function (m) {
-      if (['plan', 'ai', 'maxpressure'].indexOf(m) === -1) return;
+      if (['plan', 'ai', 'maxpressure', 'nn'].indexOf(m) === -1) return;
       controlMode = m;
       for (const j of junctions) {
         j.lastSource = (m === 'plan') ? 'plan' : j.lastSource;
         if (m === 'plan') j.lastReason = 'Fixed-time plan running.';
         if (m === 'maxpressure') j.lastReason = 'Max-Pressure control running.';
+        if (m === 'nn') j.lastReason = 'Trained model in control.';
         if (m === 'ai') j.lastReason = 'Awaiting next decision.';
       }
     },

@@ -104,7 +104,7 @@ body { display: grid; grid-template-columns: 70fr 30fr; }
 .hint { margin: 7px 0 0; font-size: 11.5px; color: var(--text-dim); line-height: 1.35; }
 
 /* --------------------------------------------------------------- controls */
-.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
+.seg { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
 .seg-btn {
   padding: 10px 4px;
   font-size: 11.5px; font-weight: 800; letter-spacing: 0.8px;

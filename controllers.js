@@ -96,12 +96,24 @@ const CONTROLLERS = (function () {
     return p;
   }
 
-  const MARGIN = 1.0;    // PCU advantage needed before switching, damps flapping
+  /* Two guards that matter more than the rule itself. Every phase change costs
+   * yellow plus all-red - four seconds that serve nobody - so a controller that
+   * switches whenever the pressure difference flips sign destroys more capacity
+   * than it gains. MIN_SERVICE keeps a phase for long enough to be worth the
+   * change, MARGIN stops it flapping around a tie, and decisions are taken on an
+   * interval rather than on every physics tick. */
+  const MARGIN = 2.5;          // PCU advantage needed before switching
+  const MIN_SERVICE = 10;      // seconds a phase runs before switching is allowed
+  const DECIDE_EVERY = 2.0;    // seconds between decisions
+  let sinceDecision = 0;
 
-  function stepMaxPressure() {
+  function stepMaxPressure(dt) {
+    sinceDecision += dt;
+    if (sinceDecision < DECIDE_EVERY) return;
+    sinceDecision = 0;
     for (const j of SIM.junctions) {
       if (j.state !== 'green') continue;
-      if (j.greenElapsed < SIM.SIGNAL.minGreen) continue;
+      if (j.greenElapsed < Math.max(SIM.SIGNAL.minGreen, MIN_SERVICE)) continue;
       const other = (j.phase === 'NS') ? 'EW' : 'NS';
       const pNow = pressure(j, j.phase);
       const pOther = pressure(j, other);
@@ -123,8 +135,8 @@ const CONTROLLERS = (function () {
     }
   }
 
-  SIM.onTick(function () {
-    if (SIM.controlMode() === 'maxpressure') stepMaxPressure();
+  SIM.onTick(function (dt) {
+    if (SIM.controlMode() === 'maxpressure') stepMaxPressure(dt);
   });
 
   function clamp(x, lo, hi) { return x < lo ? lo : (x > hi ? hi : x); }

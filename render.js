@@ -464,8 +464,10 @@
   function wireControls() {
     document.getElementById('model-name').textContent = AGENT.hasKey() ? AGENT.MODEL : 'heuristic';
 
-    const modes = { 'btn-plan': 'plan', 'btn-mp': 'maxpressure', 'btn-ai': 'ai' };
-    const caps = { plan: 'FIXED-TIME PLAN', maxpressure: 'MAX-PRESSURE CONTROL', ai: 'GEMINI AI CONTROL' };
+    const modes = { 'btn-plan': 'plan', 'btn-mp': 'maxpressure',
+                    'btn-nn': 'nn', 'btn-ai': 'ai' };
+    const caps = { plan: 'FIXED-TIME PLAN', maxpressure: 'MAX-PRESSURE CONTROL',
+                   nn: 'TRAINED MODEL IN CONTROL', ai: 'GEMINI AI CONTROL' };
     for (const id in modes) {
       document.getElementById(id).addEventListener('click', function () {
         SIM.setControlMode(modes[id]);
