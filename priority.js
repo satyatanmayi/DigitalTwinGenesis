@@ -412,8 +412,32 @@ const PRIORITY = (function () {
     nextId = 1;
   }
 
+  /* ------------------------------------------------- operator overrides
+   * The control room can overrule the engine. That is deliberate: an operator
+   * with information the model does not have must be able to act, and the log
+   * records that a human made the call.
+   */
+  function forceGrant(req) {
+    if (req.state === 'granted') return req;
+    scoreOf(req);
+    const rival = conflictingActive(req);
+    if (rival) revoke(rival, 'Released by operator decision in favour of ' + req.id + '.');
+    grant(req);
+    note('operator', req.id, req.id + ' GRANTED by the control room operator, overriding ' +
+      'the score of ' + req.estimate.score.toFixed(2) + '.');
+    return req;
+  }
+
+  function forceRefuse(req, why) {
+    SIM.clearPriorityHold(req.id);
+    refuse(req, why || 'Refused by the control room operator.');
+    return req;
+  }
+
   return {
     POLICY: POLICY,
+    forceGrant: forceGrant,
+    forceRefuse: forceRefuse,
     requests: requests,
     log: log,
     submit: submit,

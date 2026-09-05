@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control Room — Digital Twin Genesis</title>
+  <link rel="stylesheet" href="console.css">
+</head>
+<body>
+
+<header id="bar">
+  <div class="brand">
+    <span class="dot" id="link-dot"></span>
+    <strong>CONTROL ROOM</strong>
+    <span class="sub">Digital Twin Genesis</span>
+  </div>
+  <div class="bar-stats">
+    <div><b id="k-delay">—</b><span>AVG DELAY</span></div>
+    <div><b id="k-queue">—</b><span>WAITING</span></div>
+    <div><b id="k-onroad">—</b><span>ON ROAD</span></div>
+    <div><b id="k-clock">—</b><span>CLOCK</span></div>
+  </div>
+  <div class="bar-right">
+    <span id="link-state">connecting…</span>
+    <button id="btn-help" class="ghost" type="button">?</button>
+  </div>
+</header>
+
+<!-- ====================================================== the alert ======= -->
+<section id="alert" class="alert hidden">
+  <div class="alert-head">
+    <span class="tag" id="alert-tag">CONFLICT PREDICTED</span>
+    <span class="countdown" id="alert-count">in 12s</span>
+  </div>
+  <h1 id="alert-title">Two priority requests need opposite phases at J1</h1>
+  <p id="alert-sub">Only one can be served. Choose, or the network chooses for you.</p>
+
+  <div id="options" class="options"></div>
+
+  <p class="fineprint">
+    Costs are <b>predictions</b> made from the junction as it is right now, not
+    measurements. What actually happened is recorded in the log below once it has.
+  </p>
+</section>
+
+<section id="calm" class="calm">
+  <h2>No decision needed right now</h2>
+  <p>The network is running inside its normal envelope. This screen wakes up when
+     something is about to need a person: two priority requests converging, a queue
+     about to spill back, or an approach that has stopped discharging.</p>
+</section>
+
+<!-- ====================================================== the network ===== -->
+<main id="grid">
+  <section class="panel" id="junction-panel">
+    <h2>NETWORK</h2>
+    <div id="junctions"></div>
+  </section>
+
+  <section class="panel">
+    <h2>PRIORITY REQUESTS</h2>
+    <div id="requests"><p class="empty">No requests.</p></div>
+  </section>
+
+  <section class="panel">
+    <h2>DECISION LOG</h2>
+    <div id="log"><p class="empty">Nothing yet.</p></div>
+  </section>
+</main>
+
+<!-- ====================================================== operator tools == -->
+<section id="tools" class="panel">
+  <h2>OPERATOR CONTROLS</h2>
+  <div class="tool-row">
+    <label>Junction
+      <select id="t-junction">
+        <option value="ALL">All</option><option>J1</option><option>J2</option>
+        <option>J3</option><option>J4</option>
+      </select>
+    </label>
+    <label>North–south green
+      <input id="t-ns" type="range" min="5" max="60" value="18"><output id="t-ns-out">18s</output>
+    </label>
+    <label>East–west green
+      <input id="t-ew" type="range" min="5" max="60" value="18"><output id="t-ew-out">18s</output>
+    </label>
+    <button id="t-apply" class="primary" type="button">SEND TO JUNCTION</button>
+  </div>
+  <div class="tool-row second">
+    <span class="lbl">Controller</span>
+    <button class="chip" data-mode="plan">Fixed plan</button>
+    <button class="chip" data-mode="maxpressure">Max-Pressure</button>
+    <button class="chip" data-mode="nn">Trained model</button>
+    <span class="spacer"></span>
+    <span class="lbl">Rehearse</span>
+    <button class="chip warn" data-scenario="twoAmbulances">Two ambulances</button>
+    <button class="chip warn" data-scenario="accident">Accident</button>
+    <button class="chip warn" data-scenario="flood">Flood</button>
+    <button class="chip" data-scenario="normal">All clear</button>
+  </div>
+</section>
+
+<div id="help" class="help hidden">
+  <div class="help-card">
+    <h3>What this screen is</h3>
+    <p>This is the control room view. The other window — the street — is the
+       digital twin of what is happening on the road. This one watches it, warns
+       you <b>before</b> something needs a decision, and tells you what each
+       option is likely to cost.</p>
+    <ol>
+      <li>Open <b>index.html</b> in a second window. That is the street.</li>
+      <li>Press <b>Two ambulances</b> below, or do it from the street.</li>
+      <li>This screen raises an alert with a countdown and your options.</li>
+      <li>Pick one. It is applied on the street, and the outcome is logged.</li>
+    </ol>
+    <p class="fineprint">If the two windows cannot talk, this screen says so at
+       the top right and every control still works — it just cannot see the street.</p>
+    <button id="help-close" class="primary" type="button">Got it</button>
+  </div>
+</div>
+
+<script src="link.js"></script>
+<script src="console.js"></script>
+</body>
+</html>
