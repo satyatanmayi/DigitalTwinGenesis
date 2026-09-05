@@ -605,6 +605,37 @@ Both models were trained inside their own simulator, and both were scored on sce
   </div>
 </section>
 
+<!-- 15b -->
+<section class="slide" data-time="55s" data-notes="This is a real Vijayawada road network. We pulled it from OpenStreetMap through the Overpass API and compiled it with SUMO's own tools - no clicking, one command, so anyone can rebuild it.
+
+A one point seven kilometre trip from a home to a hospital, crossing nineteen signalised junctions. We ran the same traffic twice.
+
+With the signals ignoring the ambulance, the trip took three hundred and sixty-nine seconds, and it spent a hundred and sixty of those standing still. Holding each junction green as it approached, it took a hundred and seventy-seven seconds and never stopped once. A hundred and ninety-two seconds saved on a one point seven kilometre journey.
+
+And one thing worth telling you before you ask: OpenStreetMap has two tagged traffic signals across five hundred and sixteen kilometres of Vijayawada road. Two. The real number is in the hundreds. So the geometry is real and the signal placement is inferred - and that data gap is itself part of the problem a city has to solve.">
+  <div class="top"><p class="eyebrow good">On a real map</p><span class="rubric">REAL WORLD IMPACT</span></div>
+  <h2>Vijayawada: 1.71 km, 19 signalised junctions</h2>
+  <div class="cols">
+    <div>
+      <table class="mini" style="font-size:19px">
+        <tr><th>&nbsp;</th><th>waiting</th><th>trip</th></tr>
+        <tr><td class="k">signals ignore it</td><td class="v">160 s</td><td class="v">369 s</td></tr>
+        <tr><td class="k" style="color:var(--good)">green corridor</td>
+            <td class="v" style="color:var(--good)"><b>0 s</b></td>
+            <td class="v" style="color:var(--good)"><b>177 s</b></td></tr>
+      </table>
+      <p class="foot" style="margin-top:20px;font-size:20px;color:var(--good)">
+        192 seconds saved &mdash; 52% faster</p>
+      <p class="foot" style="margin-top:10px">19 junction preemptions. Ordinary traffic 1.5% better, which is noise, not a benefit.</p>
+    </div>
+    <ul class="pts">
+      <li><span class="mk">REAL</span><div>Geometry straight from OpenStreetMap<small>Overpass API, compiled by netconvert, one command</small></div></li>
+      <li><span class="mk">INFERRED</span><div>Signal placement is an assumption<small>OSM tags <b>two</b> signals across 516 km of Vijayawada road. The real number is in the hundreds</small></div></li>
+      <li><span class="mk">SO</span><div>The data gap is part of the problem<small>a city cannot manage what it has not mapped</small></div></li>
+    </ul>
+  </div>
+</section>
+
 <!-- 16 -->
 <section class="slide" data-time="45s" data-notes="Two users, both inside a traffic department.
 
@@ -797,7 +828,7 @@ Traffic decisions get made every day with no way to try them first. This is the 
 </div></div>
 
 <div id="bar"><i></i></div>
-<div id="hud">1 / 24</div>
+<div id="hud">1 / 25</div>
 <div id="help">← → move · N notes · F full screen · Ctrl+P export PDF</div>
 <div id="notes"><h4>Speaker notes <span class="time"></span></h4><p></p></div>
 
