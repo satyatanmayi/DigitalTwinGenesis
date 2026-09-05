@@ -546,6 +546,25 @@
     document.getElementById('btn-failure').addEventListener('click', function () { SCENARIOS.signalFailure('J3'); syncTimingInputs(); });
     document.getElementById('btn-corridor').addEventListener('click', function () { SCENARIOS.requestCorridor('EW'); });
 
+    // ---- dispatch panel: place a request with its own severity and source ----
+    document.getElementById('btn-send-req').addEventListener('click', function () {
+      const req = PRIORITY.submit({
+        severity: document.getElementById('rq-sev').value,
+        verification: document.getElementById('rq-ver').value,
+        axis: document.getElementById('rq-axis').value,
+        persons: parseInt(document.getElementById('rq-persons').value, 10)
+      });
+      document.getElementById('rq-note').textContent =
+        req.id + ' ' + req.state.toUpperCase() + (req.reason ? ' — ' + req.reason : ' — ' + req.workings);
+    });
+
+    document.getElementById('btn-two-amb').addEventListener('click', function () {
+      const pair = SCENARIOS.twoAmbulances();
+      document.getElementById('rq-note').textContent =
+        pair[0].id + ' and ' + pair[1].id + ' are converging on the same junction on ' +
+        'opposite phases. Watch the control room window.';
+    });
+
     window.addEventListener('keydown', function (e) {
       if (e.code === 'Space') { e.preventDefault(); pause.click(); }
     });

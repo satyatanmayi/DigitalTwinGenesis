@@ -111,6 +111,45 @@
       </div>
     </section>
 
+    <!-- ------------------------------------------------ dispatch -------- -->
+    <section class="panel">
+      <h2>DISPATCH A PRIORITY REQUEST</h2>
+      <div class="grid2">
+        <label class="row"><span>SEVERITY</span>
+          <select id="rq-sev" class="ctl-select">
+            <option value="S1">S1 critical</option>
+            <option value="S2">S2 urgent</option>
+            <option value="S3">S3 routine</option>
+          </select>
+        </label>
+        <label class="row"><span>SOURCE</span>
+          <select id="rq-ver" class="ctl-select">
+            <option value="verified">Verified</option>
+            <option value="unverified">Unverified</option>
+          </select>
+        </label>
+        <label class="row"><span>ROAD</span>
+          <select id="rq-axis" class="ctl-select">
+            <option value="EW">East–west</option>
+            <option value="NS">North–south</option>
+          </select>
+        </label>
+        <label class="row"><span>ON BOARD</span>
+          <select id="rq-persons" class="ctl-select">
+            <option value="1">1 patient</option>
+            <option value="8">8 (minibus)</option>
+            <option value="40">40 (bus)</option>
+          </select>
+        </label>
+      </div>
+      <div class="btn-row" style="grid-template-columns:1fr 1fr">
+        <button id="btn-send-req" class="ctl-btn accent" type="button">SEND REQUEST</button>
+        <button id="btn-two-amb" class="ctl-btn danger" type="button">TWO AMBULANCES</button>
+      </div>
+      <p class="hint" id="rq-note">Severity and verification arrive from outside this tool —
+        it decides what the network does with a request, not whether it is genuine.</p>
+    </section>
+
     <!-- ------------------------------------------------ ledger ----------- -->
     <section class="panel">
       <h2>COST OF PRIORITY</h2>
