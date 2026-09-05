@@ -90,6 +90,13 @@
       if (!best || o.score > best.score) best = o;
     }
     for (const o of opts) o.best = (o === best);
+    if (best) {
+      const other = opts.find(function (o) { return o !== best && o.score !== null; });
+      if (other) {
+        best.why += ' Recommended: benefit-to-cost ' + best.score.toFixed(2) +
+                    ' against ' + other.score.toFixed(2) + '.';
+      }
+    }
     return opts;
   }
 
@@ -133,6 +140,7 @@
         '<div class="nums">' +
           '<div><b>' + (o.saved === null ? '—' : o.saved + 's') + '</b><span>PREDICTED SAVING</span></div>' +
           '<div><b>' + (o.cost === null ? '—' : o.cost) + '</b><span>VEH-SEC COST</span></div>' +
+          '<div><b>' + (o.score === null ? '—' : o.score.toFixed(2)) + '</b><span>BENEFIT / COST</span></div>' +
         '</div>' +
         '<button type="button">CHOOSE</button>';
       card.querySelector('button').addEventListener('click', function () {

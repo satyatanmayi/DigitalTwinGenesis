@@ -191,29 +191,43 @@
     fill(red(c), green(c), blue(c), 55); ellipse(x, y, 26, 26);
   }
 
+  /* Vehicles are drawn larger than their true size, the way a transport map
+   * exaggerates a station symbol: at real scale a two-wheeler is under a
+   * millimetre on a projector and the animation reads as an empty grid. The
+   * PHYSICS uses the true dimensions - only the drawing is enlarged, and the
+   * relative sizes between vehicle types are preserved. */
+  const DRAW_SCALE = 1.9;
+  const MIN_DRAW_W = 7;
+
   function drawVehicles() {
     rectMode(CENTER);
     for (const v of SIM.vehicles) {
       const base = TYPE_COLOR[v.type.id] || C.accent;
       const queued = v.speed < 8;
+      const len = v.type.len * DRAW_SCALE;
+      const wid = Math.max(MIN_DRAW_W, v.type.wid * DRAW_SCALE);
       push();
       translate(v.x, v.y);
       if (v.dir === 'N' || v.dir === 'S') rotate(HALF_PI);
 
       if (v.priority) {
         noStroke();
-        fill(34, 211, 238, 60); ellipse(0, 0, v.type.len + 26, v.type.len + 26);
+        fill(34, 211, 238, 70); ellipse(0, 0, len + 34, len + 34);
         fill('#ffffff');
-        rect(0, 0, v.type.len, v.type.wid, 2);
+        rect(0, 0, len, wid, 2);
+        fill(C.red);
+        rect(0, 0, len * 0.34, wid, 1);          // a red flash, so it reads instantly
       } else {
-        noStroke();
         const c = color(base);
-        fill(red(c), green(c), blue(c), queued ? 130 : 255);
-        rect(0, 0, v.type.len, v.type.wid, 2);
+        stroke(10, 14, 20, queued ? 120 : 200);
+        strokeWeight(1);
+        fill(red(c), green(c), blue(c), queued ? 150 : 255);
+        rect(0, 0, len, wid, 2);
       }
       pop();
     }
     rectMode(CORNER);
+    noStroke();
 
     const pv = SCENARIOS.trackedVehicle();
     if (pv) {

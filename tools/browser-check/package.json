@@ -1,0 +1,12 @@
+{
+  "name": "dtg-browser-check",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Headless verification that the twin and the console actually run",
+  "scripts": {
+    "check": "node check.js"
+  },
+  "dependencies": {
+    "puppeteer": "^25.10.0"
+  }
+}

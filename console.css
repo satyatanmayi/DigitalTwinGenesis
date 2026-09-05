@@ -93,7 +93,7 @@ body {
 .option.best { border-color: var(--good); background: var(--good-bg); }
 .option h3 { margin: 0; font-size: 19px; }
 .option .why { color: var(--dim); font-size: 14px; min-height: 38px; }
-.option .nums { display: flex; gap: 16px; font-family: var(--mono); font-size: 13px; }
+.option .nums { display: flex; gap: 14px; font-family: var(--mono); font-size: 13px; flex-wrap: wrap; }
 .option .nums b { color: var(--accent-2); font-size: 17px; display: block; }
 .option .nums span { color: var(--dim); font-size: 10.5px; letter-spacing: 1px; }
 .option .badge {

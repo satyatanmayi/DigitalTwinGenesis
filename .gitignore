@@ -13,3 +13,6 @@ node_modules/
 sumo/net/*.rou.xml
 sumo/net/trip_test.xml
 !sumo/net/junction.rou.xml
+
+# browser-check
+tools/browser-check/node_modules/
