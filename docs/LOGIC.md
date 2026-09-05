@@ -126,7 +126,7 @@ States within a phase: `green` → `yellow` → `allred` → other phase green.
 | --- | --- |
 | Yellow | 3.0 s |
 | All-red | 1.0 s |
-| Minimum green | 5 s |
+| Minimum green | 10 s |
 | Maximum green | 60 s |
 | Default plan | 18 s NS / 18 s EW, giving a 40 s cycle |
 
@@ -138,7 +138,7 @@ This is the primary interaction the problem statement asks for.
 
 ### 5.3 Safety guarantees — true whatever any controller returns
 
-1. **Minimum green.** A green is never cut below 5 s served.
+1. **Minimum green.** A green is never cut below 10 s served.
 2. **Maximum green.** Once 60 s of green have run, the timer is forced to zero.
    A controller that keeps saying "extend" cannot starve the opposing phase.
 3. **Yellow and all-red are never skipped.** Every phase change passes through
