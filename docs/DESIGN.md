@@ -149,16 +149,55 @@ out of scope, and the panel says so on screen:
 That one line is what lets us demonstrate the whole network-side mechanism
 without disclosing anything protected (§12).
 
-### 5.2 Ranking — rule-based, shown, never learned
+### 5.2 Ranking — a live benefit-cost ratio, not a fixed class
 
-A score per request combining severity class, verification status, seconds
-waited since the request arrived, route length, and predicted network impact
-(current network queue). The **arithmetic is printed beside the decision**, so
-an operator can audit it and a judge can ask why request B beat request A and
-receive numbers.
+Existing priority systems assign a **class** in advance — ambulance outranks
+bus outranks car — and serve the highest class present. That is what NTCIP 1211
+standardises, and it is adequate when a city has around fifty authorised
+vehicles and conflicts are rare.
 
-Ageing is included deliberately: a request that has waited climbs, so a
-low-severity request is never starved indefinitely.
+This system scores each request **live, from what the grant is actually worth
+against what it will cost**, which means the same vehicle can be granted at
+15:00 and refused at 18:00, with the reason stated either way.
+
+**Inputs supplied from outside, never inferred here:**
+
+| Input | Source | Note |
+| --- | --- | --- |
+| Severity class (S1 / S2 / S3) | Hospital or dispatcher | Medical judgment stays medical. Nothing in this system infers severity from symptoms or vitals |
+| Verification status | External | Out of scope for this tool |
+| Vehicle type | The request | Ambulance, fire, police, transit |
+| Persons on board | The request | A bus carrying forty people is not one vehicle |
+
+**Values computed here — the actual work:**
+
+| Metric | How it is obtained |
+| --- | --- |
+| Predicted seconds saved | Run the twin forward under both futures — granted and not granted — and take the difference for that vehicle |
+| Predicted cost to others | The same two runs: vehicle-seconds added to cross traffic |
+| Time already lost | Seconds since the request was raised. The ageing term |
+| Feasibility | Whether the phase can still be held in time given minimum green. A grant that lands late is pure cost |
+| Conflict depth | Junctions shared with a corridor already running |
+
+**The score:**
+
+```
+        severity × persons × predicted_seconds_saved  +  ageing_bonus
+score = ─────────────────────────────────────────────────────────────
+             predicted_cross_traffic_cost  +  conflict_penalty
+```
+
+Measured in **person-seconds** on both sides, which is standard transportation
+practice and is what allows a full bus to legitimately outrank a car.
+
+A request is granted only if the score clears a threshold, the network delay
+budget allows it, and it is still feasible. Otherwise it is queued or refused,
+with the reason named. The **arithmetic is printed beside the decision**, so an
+operator can audit it and a judge can ask why request B beat request A and
+receive numbers rather than a shrug.
+
+The ageing term is the same guard as maximum green: a request that keeps losing
+climbs until it wins, so nothing starves indefinitely.
 
 ### 5.3 Arbitration, including conflict
 
