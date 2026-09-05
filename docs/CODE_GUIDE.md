@@ -273,6 +273,23 @@ beat the fixed plan; Monte-Carlo returns did.** That is worth saying out loud to
 a judge — it is a real result, and pretending the first thing worked would be a
 lie that a good judge will find.
 
+**To retrain, with evidence:**
+
+```
+python tools/train.py --episodes 120 --steps 80 --epochs 80 --probe-every 5
+```
+
+`--probe-every N` scores the half-trained network every N epochs on three seeds
+it has never been trained on, against both baselines on identical traffic, and
+records that in `tools/training-history.json`. That held-out curve is the answer
+to "how do I know it was trained and not hand-tuned" — a falling loss only shows
+the network fitting its own labels.
+
+The run writes **both** `weights.json` and `weights.js`. The page loads
+`weights.js` so it works when opened straight off the disk; for a long time only
+the JSON was written, which meant a retrained model silently never reached the
+browser. If your new model does not show up on the page, check that.
+
 ### `sumo/` — the real city
 
 SUMO is the standard open-source traffic simulator, used by actual transport
@@ -327,7 +344,8 @@ can show them the single function it all funnels through.
 | change the abuse limits | `priority.js` | `perSourceGrants`, `perSourceRequests`, `perSourceWindowSec` |
 | add a new emergency scenario | `scenarios.js` | copy the shape of `accident` |
 | change the network-wide optimisation | `quantum.js` | `LAMBDA` (one phase per junction), `MU` (neighbour agreement) |
-| retrain the model | `tools/train.py` | run against `tools/env-server.js`; then rebuild `weights.js` |
+| retrain the model | `tools/train.py` | `--episodes`, `--epochs`; it writes `weights.json` **and** `weights.js` |
+| prove the model was trained | `tools/train.py` | `--probe-every 5` — held-out score during the fit, into `training-history.json` |
 | change what the model can see | `features.js` | **and then retrain — the browser and the trainer share this file** |
 | change the 3D look | `render3d.js` | `SCALE`, `MAX_VEHICLES`, the material definitions |
 | change the control room's options | `console.js` | the option-pricing function |

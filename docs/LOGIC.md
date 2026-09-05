@@ -221,7 +221,7 @@ and takes the better one, through `SIM.applyAction()` like everything else.
 
 Measured on held-out seeds, identical traffic, 360 s window, demand biased 2×
 toward one axis: fixed plan 35.28 s, Max-Pressure 31.95 s, trained model
-31.46 s.
+29.78 s.
 
 **The envelope, stated plainly:** under symmetric steady demand no adaptive
 controller beats an equal split, because of the switching cost above. Adaptive

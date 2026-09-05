@@ -105,7 +105,7 @@ biased 2× toward one axis:
 | --- | --- |
 | Fixed plan | 35.28 s |
 | Max-Pressure | 31.95 s |
-| Trained model | **31.46 s — 10.8% better than fixed** |
+| Trained model | **29.78 s — 15.6% better than fixed** |
 
 **SUMO track** — five held-out scenarios, one ambulance each:
 

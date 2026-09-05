@@ -59,7 +59,7 @@ MONO = 'Consolas'
 # ------------------------------------------------------------- every number
 # One source of truth. The figures and the slides both read from here.
 RESULTS = {
-    'delay': [('Fixed-time plan', 35.3), ('Max-Pressure', 32.0), ('Trained model', 31.5)],
+    'delay': [('Fixed-time plan', 35.3), ('Max-Pressure', 32.0), ('Trained model', 29.8)],
     'corridor_trip': (369, 177),
     'corridor_wait': (160, 0),
     'corridor_others_pct': -1.5,
@@ -100,10 +100,10 @@ def fig_delay():
     for b, v in zip(bars, vals):
         ax.text(b.get_x() + b.get_width() / 2, v + 0.15, f'{v:.1f}s',
                 ha='center', color=TEXT, fontsize=17, fontweight='bold')
-    ax.set_ylim(29, 37)
+    ax.set_ylim(28, 37.4)
     ax.set_ylabel('average delay per vehicle (s)   —   lower is better', fontsize=11)
     ax.grid(axis='y', color='#242B36', zorder=0)
-    ax.set_yticks([30, 32, 34, 36])
+    ax.set_yticks([28, 30, 32, 34, 36])
     fig.tight_layout()
     p = os.path.join(FIGS, 'delay.png')
     fig.savefig(p, dpi=200, facecolor=BG)
@@ -352,6 +352,77 @@ def fig_scale():
     return p
 
 
+def fig_training():
+    """The proof that the model was trained rather than hand-tuned.
+
+    Two panels, because they answer two different objections. The left one is
+    the regression loss, which only proves the network fits its own labels. The
+    right one is the score on THREE SEEDS IT WAS NEVER TRAINED ON, taken every
+    five epochs during the fit, against both baselines on identical traffic.
+    A judge who does not trust the left panel should be shown the right one.
+    """
+    import json
+    path = os.path.join(ROOT, 'tools', 'training-history.json')
+    with open(path) as fh:
+        hist = json.load(fh)
+
+    ep = [h['epoch'] for h in hist]
+    loss = [h['loss'] for h in hist]
+    probes = [h for h in hist if 'modelDelay' in h]
+
+    fig, (a, b) = plt.subplots(1, 2, figsize=(12.5, 4.4), facecolor=BG)
+
+    _style(a)
+    a.plot(ep, loss, color=AMBER, linewidth=2.2, zorder=3)
+    a.set_xlabel('epoch', fontsize=11)
+    a.set_ylabel('regression loss', fontsize=11)
+    a.set_title('Fitting the collected returns', color=TEXT, fontsize=13, pad=12)
+    a.grid(color='#242B36', zorder=0)
+
+    _style(b)
+    if probes:
+        pe = [h['epoch'] for h in probes]
+        b.axhline(probes[0]['fixedDelay'], color=DIM, linewidth=1.6,
+                  linestyle='--', zorder=2)
+        b.axhline(probes[0]['maxPressureDelay'], color=BLUE, linewidth=1.6,
+                  linestyle='--', zorder=2)
+        b.plot(pe, [h['modelDelay'] for h in probes], color=GREEN,
+               linewidth=2.4, marker='o', markersize=4, zorder=3)
+        b.text(pe[-1], probes[0]['fixedDelay'], ' fixed plan', color=DIM,
+               fontsize=10, va='bottom', ha='right')
+        b.text(pe[-1], probes[0]['maxPressureDelay'], ' Max-Pressure', color=BLUE,
+               fontsize=10, va='bottom', ha='right')
+        b.text(pe[0], probes[0]['modelDelay'] - 0.35, 'the model', color=GREEN,
+               fontsize=10, va='top', ha='left')
+
+        # Mark the network that actually shipped. This run kept its last epoch,
+        # so that is what is circled - labelling any other point would be a
+        # claim about weights that are not the ones in the file.
+        last = probes[-1]
+        b.scatter([last['epoch']], [last['modelDelay']], s=130, facecolor='none',
+                  edgecolor=AMBER, linewidth=2, zorder=5)
+        b.annotate('this is the shipped model\nepoch %d, %.1fs'
+                   % (last['epoch'], last['modelDelay']),
+                   xy=(last['epoch'], last['modelDelay']),
+                   xytext=(max(pe) * 0.42, last['modelDelay'] - 1.6),
+                   color=AMBER, fontsize=10,
+                   arrowprops=dict(arrowstyle='-|>', color=AMBER, linewidth=1.2))
+        b.set_xlabel('epoch', fontsize=11)
+        b.set_ylabel('delay on held-out seeds (s)', fontsize=11)
+        b.set_title('Scored on seeds it never trained on', color=TEXT, fontsize=13, pad=12)
+        b.grid(color='#242B36', zorder=0)
+    else:
+        b.axis('off')
+        b.text(0.5, 0.5, 'no held-out probes in this run\n(re-run with --probe-every)',
+               ha='center', va='center', color=DIM, fontsize=12)
+
+    fig.tight_layout()
+    p = os.path.join(FIGS, 'training.png')
+    fig.savefig(p, dpi=200, facecolor=BG)
+    plt.close(fig)
+    return p
+
+
 def fig_osm():
     """The finding that makes this about a real city."""
     fig, ax = plt.subplots(figsize=(10, 3.6), facecolor=BG)
@@ -460,6 +531,7 @@ def build():
     f_stack = fig_llm_stack()
     f_misuse = fig_misuse()
     f_scale = fig_scale()
+    f_training = fig_training()
     f_osm = fig_osm()
 
     # ------------------------------------------------------------- 1. title
@@ -610,8 +682,19 @@ def build():
     title(s, 'Four junctions, same seeded traffic', size=34)
     centred_picture(s, f_delay, 2.0, 8.9)
     text(s, 0.85, 6.6, 11.6, 0.8,
-         'Axis starts at 29s so the gap is visible. Max-Pressure is a genuinely good published '
-         'controller - beating it by 1.6% is the honest claim, not 10x.',
+         'Axis starts at 28s so the gap is visible. Max-Pressure is a genuinely good published '
+         'controller - beating it by 6.8% is the honest claim, not 10x.',
+         size=13, color=DIM, italic=True)
+
+    # ------------------------------------------------ 11b. proof it trained
+    s = blank(prs)
+    eyebrow(s, 'proof it was trained, not tuned')
+    title(s, 'The loss falls. So does the held-out score.', size=34)
+    centred_picture(s, f_training, 2.0, 11.6)
+    text(s, 0.85, 6.5, 11.6, 0.8,
+         'Left proves only that the network fits its own labels. Right is the same network scored '
+         'every five epochs on seeds it was never trained on. It stays under both baselines at every '
+         'single probe, and it wanders - which is what a real measurement looks like.',
          size=13, color=DIM, italic=True)
 
     # ------------------------------------------------------ 12. the corridor

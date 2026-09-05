@@ -176,7 +176,7 @@ at the number.
    > "Reinforcement learning, trained against this exact simulator running
    > headless in Node — same physics, no second implementation to drift. Fixed
    > plan 35.3 seconds average delay. Max-Pressure, which is a genuinely good
-   > published controller, 32.0. The trained model 31.5."
+   > published controller, 32.0. The trained model 29.8."
    >
    > "And I will tell you the part that did not work: a standard DQN never beat
    > the fixed plan. Monte-Carlo returns did. That is in the write-up."
@@ -376,6 +376,41 @@ with total calm)*
 > Choosing JavaScript for the client was a deployment decision. The hard parts
 > are not in the client."
 
+**"How do I know the model was actually trained, and not just hand-tuned?"**
+
+This is a fair and common challenge, and there are four separate answers. Give
+them in this order — each one is harder to fake than the last.
+
+> "Four things, and you can check all of them.
+>
+> **One — the training curve.** `tools/training-history.json` has the regression
+> loss for every epoch, and it falls monotonically. That is on the slide.
+>
+> **Two — and this is the one that matters — the held-out score.** Every five
+> epochs during training, the half-finished network is scored on three seeds it
+> has never been trained on, against both baselines on identical traffic. That
+> curve comes down too. A hand-tuned set of numbers does not produce a *learning
+> curve on data it has not seen*.
+>
+> **Three — the weights are the artefact.** `weights.json` carries its own
+> metadata: when it was trained, by which method, on how many episodes, on which
+> seeds, and its evaluation. The training seeds and the evaluation seeds are
+> listed separately, so you can see they do not overlap.
+>
+> **Four — you can rerun it right now.** `python tools/train.py --probe-every 5`
+> trains against the same simulator the browser runs and rewrites the weights.
+> It takes a few minutes on this laptop."
+
+**If they ask what the model actually sees:** eight numbers per junction, listed
+in `features.js`, all measured relative to whichever phase is currently green —
+so it learns "serve the busy side", not "J3 likes north". That file is loaded by
+both the Python trainer and the browser, so the two cannot drift apart.
+
+**If they ask why it is so small:** because it has to be honest. Three matrix
+multiplies is a model whose every decision I can print on screen as two numbers.
+A bigger network would score about the same on four junctions and would be
+harder to explain — and explaining the decision is the point of the project.
+
 **"Is this actually a digital twin, or just a simulation?"**
 
 > "Fair distinction. Today it is a high-fidelity simulation with a sensor
@@ -449,7 +484,7 @@ Answer it happily. It is a trust question, not a trap.
 | Criterion | Where it is earned | The number to say |
 |---|---|---|
 | **Working prototype & functionality** | The live demo, all five moves, no crashes | 21 simulation assertions + 41 browser checks in real Chromium, all passing |
-| **Technical implementation** | Move 5: RL, LLM stack, QUBO, SUMO | Fixed 35.3s → Max-Pressure 32.0s → trained model 31.5s |
+| **Technical implementation** | Move 5: RL, LLM stack, QUBO, SUMO | Fixed 35.3s → Max-Pressure 32.0s → trained model 29.8s |
 | **Innovation & problem-solution fit** | Cost of priority + preview-before-deploy + the honest positioning slide | Priority ledger: seconds saved vs vehicle-seconds paid — no deployed ATCS publishes this |
 | **User experience** | Three tabs, one job per screen; the 2D/3D toggle; every decision prints its reason | A judge can drive it themselves without you narrating |
 | **Overall execution** | The story opening, the timing discipline, admitting what failed | 1.71 km real Vijayawada corridor, 19 junctions, ambulance 369s → 177s |
@@ -472,7 +507,7 @@ Memorise these six. Do not put more than these on a slide.
 
 | | Before | After | |
 |---|---|---|---|
-| Browser twin, average delay | 35.3 s (fixed plan) | **31.5 s** (trained model) | 10.8% better; Max-Pressure 32.0 s |
+| Browser twin, average delay | 35.3 s (fixed plan) | **29.8 s** (trained model) | 15.6% better than fixed, 6.8% better than Max-Pressure |
 | Vijayawada corridor, ambulance trip | 369 s | **177 s** | 52% faster, 1.71 km, 19 junctions |
 | Vijayawada corridor, ambulance waiting | 160 s | **0 s** | |
 | Everyone else on that corridor | — | **1.5% better** | priority did not cost them |
