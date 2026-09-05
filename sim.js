@@ -343,7 +343,15 @@ const SIM = (function () {
         const v = list[i];
         const lead = list[i + 1];
 
-        const gapLead = lead ? (lead.s - v.s - lead.type.len) : Infinity;
+        // Bumper to bumper, so BOTH bodies count. This used to subtract the
+        // whole leader length and nothing for the follower, which overstated
+        // the gap by (v.len - lead.len)/2: an 11 m bus behind a 2 m scooter
+        // believed it had 18 px more road than it did and drove into it, while
+        // a scooter behind a bus hung back 18 px further than it should. `s`
+        // is a centre position, so each vehicle contributes half its length.
+        const gapLead = lead
+          ? (lead.s - v.s - (lead.type.len + v.type.len) / 2)
+          : Infinity;
         const gap = Math.min(gapLead, stopLineGap(v));
 
         let vmax = v.type.maxSpeed;
@@ -365,8 +373,24 @@ const SIM = (function () {
         else v.speed = Math.max(target, v.speed - DECEL * dt);
         if (v.speed < 0) v.speed = 0;
 
-        const step = v.speed * dt;
+        let step = v.speed * dt;
         v.s += step;
+
+        // A target-speed model brakes towards zero but has nothing that forbids
+        // interpenetration, so a vehicle still closing when the gap runs out
+        // overshoots by up to a step and ends up parked inside the vehicle
+        // ahead - about half a metre here, and it stays there because the
+        // model never reverses. This is the hard floor: a body may touch the
+        // one in front, never enter it. `lead` has not moved yet this tick, so
+        // the limit is conservative, which is the right way to be wrong.
+        if (lead) {
+          const limit = lead.s - (lead.type.len + v.type.len) / 2;
+          if (v.s > limit) {
+            step -= v.s - limit;
+            v.s = limit;
+            v.speed = Math.min(v.speed, lead.speed);
+          }
+        }
         v.travelled += step;
         if (v.speed < 1) v.waitTime += dt;
 
@@ -418,7 +442,10 @@ const SIM = (function () {
       const onPath = (v.dir === 'E' || v.dir === 'W') ? (j.row === v.lane) : (j.col === v.lane);
       if (!onPath) continue;
       const sStop = progressOf(v.dir, j.x, j.y) - JUNCTION_HALF - 2;
-      const d = sStop - v.s;
+      // Measured from the front bumper, for the same reason as gapLead above:
+      // `v.s` is the centre, so a bus stopping on its centre puts 5.5 m of
+      // itself across the stop line and into the junction.
+      const d = sStop - (v.s + v.type.len / 2);
       if (d < -2) continue;
       const sig = signalFor(j, v.dir);
       if (sig === 'green') continue;

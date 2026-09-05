@@ -357,3 +357,66 @@ body { display: block; }
 
 #llm-last { margin-top: 8px; }
 #llm-last .dec { margin: 0; }
+
+/* ===================================================== 3D scenario overlay ==
+ * Text drawn over the WebGL canvas rather than inside it. Projected DOM stays
+ * crisp at any zoom, wraps properly, and inherits the theme - a label baked
+ * into a texture goes soft the moment somebody scrolls in. Positions are set
+ * every frame by render3d.js. Nothing here is interactive.
+ */
+.ov3d { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+.ov3d-card {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  max-width: 230px;
+  background: rgba(12, 17, 24, 0.88);
+  border: 1px solid #2A3240;
+  border-left: 3px solid var(--text-dim);
+  border-radius: 6px;
+  padding: 5px 8px 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text);
+}
+.ov3d-card b {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .04em;
+  color: var(--accent-2);
+  margin-bottom: 2px;
+}
+.ov3d-card[data-source="gemini"] { border-left-color: var(--accent); }
+.ov3d-card[data-source="nn"]     { border-left-color: var(--green); }
+.ov3d-card[data-source="maxpressure"] { border-left-color: #67e8f9; }
+.ov3d-card[data-source="error"], .ov3d-card[data-source="qubo"] { border-left-color: var(--red); }
+.ov3d-card.incident { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
+
+.ov3d-priority {
+  position: absolute;
+  transform: translate(-50%, -140%);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: #0b1016;
+  background: #ffffff;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+.ov3d-banner {
+  /* Clear of #insight, which owns the bottom strip of the stage in both views. */
+  position: absolute;
+  left: 50%; bottom: 96px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: #0b1016;
+  background: var(--warn);
+  border-radius: 4px;
+  padding: 5px 12px;
+}

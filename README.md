@@ -21,7 +21,7 @@ No build step, no framework, no npm. Vanilla JavaScript plus p5.js from a CDN.
 | **present it** | [`docs/NEXUS_Round2.pptx`](docs/NEXUS_Round2.pptx), or [`docs/round2-deck.html`](docs/round2-deck.html) in a browser — press **N** for speaker notes |
 | **know what to say** | [`docs/PITCH.md`](docs/PITCH.md) — the ten-minute script, the demo timings, and the question bank |
 | **understand or change the code** | [`docs/CODE_GUIDE.md`](docs/CODE_GUIDE.md) — every file, and an *I want to change X* table |
-| **check it still works** | `node tests/run.js` (21 assertions) and `node tools/browser-check/check.js` (41 checks in real Chromium) |
+| **check it still works** | `node tests/run.js` (21 assertions) and `node tools/browser-check/check.js` (44 checks in real Chromium) |
 | **rebuild the deck** | `python tools/make_deck.py` |
 
 ---

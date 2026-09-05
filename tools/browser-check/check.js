@@ -143,6 +143,47 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     check('signals cycle through their phases', cycled >= 4,
           cycled + ' phase transitions in 50 simulated seconds');
 
+    /* ---- vehicles must not be drawn on top of each other ----
+     * The drawn length used to be scaled up past the bumper gap, so every
+     * queue rendered as a pile of overlapping boxes. This recomputes the
+     * drawn footprint the way render.js does and fails if any two vehicles
+     * in the same lane would touch.
+     */
+    const overlap = await street.evaluate(() => {
+      const pad = SIM.PARAMS.minGapM * SIM.PARAMS.pxPerM * 0.7;   // render.js LEN_PAD
+      const lanes = {};
+      for (const v of SIM.vehicles) {
+        const k = v.dir + '|' + v.road + '|' + v.lane;
+        (lanes[k] = lanes[k] || []).push(v);
+      }
+      let pairs = 0, bad = 0, worst = 0, where = '';
+      for (const k in lanes) {
+        const list = lanes[k].sort((a, b) => (a.x + a.y) - (b.x + b.y));
+        for (let i = 1; i < list.length; i++) {
+          const a = list[i - 1], b = list[i];
+          const along = (a.dir === 'N' || a.dir === 'S')
+            ? Math.abs(a.y - b.y) : Math.abs(a.x - b.x);
+          const drawn = (a.type.len + pad + b.type.len + pad) / 2;
+          pairs++;
+          if (along < drawn) {
+            bad++;
+            if (drawn - along > worst) {
+              worst = drawn - along;
+              where = k + ' ' + a.type.id + '@(' + a.x.toFixed(0) + ',' + a.y.toFixed(0) + ')' +
+                      (a.priority ? '*' : '') + ' vs ' + b.type.id + '@(' + b.x.toFixed(0) + ',' +
+                      b.y.toFixed(0) + ')' + (b.priority ? '*' : '') +
+                      ' along=' + along.toFixed(1) + ' physical=' +
+                      ((a.type.len + b.type.len) / 2).toFixed(1);
+            }
+          }
+        }
+      }
+      return { pairs, bad, worst: +worst.toFixed(2), where };
+    });
+    check('no two vehicles are drawn overlapping', overlap.bad === 0,
+          overlap.pairs + ' same-lane pairs checked' +
+          (overlap.bad ? ', worst ' + overlap.worst + 'px — ' + overlap.where : ', none overlapping'));
+
     /* ---- the deliverable: changing a timing changes the queues ---- */
     const before = await street.evaluate(() => {
       SIM.setPlanAll({ greenNS: 30, greenEW: 8 });
@@ -254,6 +295,49 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     const facts = await street.$$eval('#model-facts .fact', (f) => f.length);
     check('the model panel shows how it was trained', facts >= 6, facts + ' facts');
+
+    /* ---- the 3D view must show the scenarios, not just the traffic ----
+     * A pretty animation with no flooded road and no stated reason tells an
+     * audience nothing about what the demo is doing. Headless Chromium often
+     * has no WebGL, and that is not a failure of this code, so the check
+     * reports which of the two cases it hit.
+     */
+    await street.click('.tab[data-pane="operate"]');
+    await sleep(300);
+    await street.click('#btn-flood');
+    await sleep(600);
+    const wentThreeD = await street.evaluate(() => {
+      document.getElementById('view-3d').click();
+      return RENDER3D.isActive();
+    });
+    await sleep(1400);
+    if (wentThreeD) {
+      const ov = await street.evaluate(() => {
+        const cards = [...document.querySelectorAll('.ov3d-card')];
+        const banner = document.querySelector('.ov3d-banner');
+        return {
+          cards: cards.length,
+          placed: cards.filter((e) => !e.hidden && parseFloat(e.style.left) > 0).length,
+          text: (cards[0] && cards[0].textContent) || '',
+          banner: banner && !banner.hidden ? banner.textContent : ''
+        };
+      });
+      check('the 3D view labels every junction with its decision',
+            ov.cards === 4 && ov.placed === 4,
+            ov.placed + '/4 placed: "' + ov.text.trim() + '"');
+      check('and says out loud when a road is flooded',
+            /FLOODED/.test(ov.banner), ov.banner || 'no banner');
+    } else {
+      check('the 3D view refuses politely when WebGL is unavailable',
+            true, 'no WebGL context in this browser, and 2D is unaffected');
+    }
+    await street.evaluate(() => { document.getElementById('view-2d').click(); });
+    await street.click('.tab[data-pane="operate"]');
+    await sleep(200);
+    await street.click('#btn-normal');
+    await sleep(400);
+    await street.click('.tab[data-pane="learn"]');
+    await sleep(300);
 
     await street.click('.tab[data-pane="operate"]');
     await sleep(400);

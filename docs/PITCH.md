@@ -176,7 +176,7 @@ at the number.
    > "Reinforcement learning, trained against this exact simulator running
    > headless in Node — same physics, no second implementation to drift. Fixed
    > plan 35.3 seconds average delay. Max-Pressure, which is a genuinely good
-   > published controller, 32.0. The trained model 29.8."
+   > published controller, 33.5. The trained model 32.6."
    >
    > "And I will tell you the part that did not work: a standard DQN never beat
    > the fixed plan. Monte-Carlo returns did. That is in the write-up."
@@ -427,7 +427,7 @@ harder to explain — and explaining the decision is the point of the project.
 > reproduced in SUMO, which is maintained by the German Aerospace Center and
 > used by real transport authorities, on a real imported corridor. And the
 > constants are published traffic engineering values, not tuned to make my
-> numbers look good. Plus 21 simulation assertions and 41 browser checks in real
+> numbers look good. Plus 21 simulation assertions and 44 browser checks in real
 > Chromium that run on every change."
 
 **"What is the innovation? Adaptive control exists."**
@@ -483,8 +483,8 @@ Answer it happily. It is a trust question, not a trap.
 
 | Criterion | Where it is earned | The number to say |
 |---|---|---|
-| **Working prototype & functionality** | The live demo, all five moves, no crashes | 21 simulation assertions + 41 browser checks in real Chromium, all passing |
-| **Technical implementation** | Move 5: RL, LLM stack, QUBO, SUMO | Fixed 35.3s → Max-Pressure 32.0s → trained model 29.8s |
+| **Working prototype & functionality** | The live demo, all five moves, no crashes | 21 simulation assertions + 44 browser checks in real Chromium, all passing |
+| **Technical implementation** | Move 5: RL, LLM stack, QUBO, SUMO | Fixed 36.9s → Max-Pressure 33.5s → trained model 32.6s |
 | **Innovation & problem-solution fit** | Cost of priority + preview-before-deploy + the honest positioning slide | Priority ledger: seconds saved vs vehicle-seconds paid — no deployed ATCS publishes this |
 | **User experience** | Three tabs, one job per screen; the 2D/3D toggle; every decision prints its reason | A judge can drive it themselves without you narrating |
 | **Overall execution** | The story opening, the timing discipline, admitting what failed | 1.71 km real Vijayawada corridor, 19 junctions, ambulance 369s → 177s |
@@ -507,12 +507,12 @@ Memorise these six. Do not put more than these on a slide.
 
 | | Before | After | |
 |---|---|---|---|
-| Browser twin, average delay | 35.3 s (fixed plan) | **29.8 s** (trained model) | 15.6% better than fixed, 6.8% better than Max-Pressure |
+| Browser twin, average delay | 36.9 s (fixed plan) | **32.6 s** (trained model) | 11.6% better than fixed, 2.6% better than Max-Pressure |
 | Vijayawada corridor, ambulance trip | 369 s | **177 s** | 52% faster, 1.71 km, 19 junctions |
 | Vijayawada corridor, ambulance waiting | 160 s | **0 s** | |
 | Everyone else on that corridor | — | **1.5% better** | priority did not cost them |
 | SUMO held-out scenarios, ambulance waiting | 12.0 s | **0.0 s** | 5 scenarios, trip 47 s → 32 s |
-| Verification | — | **21 + 41 checks** | simulation assertions + real-browser checks |
+| Verification | — | **21 + 44 checks** | simulation assertions + real-browser checks |
 
 Context numbers, for the positioning slide only:
 
@@ -526,7 +526,7 @@ Context numbers, for the positioning slide only:
 
 - [ ] `config.js` exists and has the key in it (`config.example.js` is the template)
 - [ ] `node tests/run.js` → 21 passed
-- [ ] `node tools/browser-check/check.js` → 41 passed
+- [ ] `node tools/browser-check/check.js` → 44 passed
 - [ ] `index.html` and `console.html` both open, both tabs left open
 - [ ] 3D view loads (needs the Three.js CDN — **check the venue wifi**)
 - [ ] If wifi is dead: 2D works, everything works, the LLM layer falls back and

@@ -10,7 +10,7 @@ and runs; nothing here is planned work described as done.*
 | Feedback | What was built |
 | --- | --- |
 | "Everything is backend" — no visible engineering | A second window, the control room console, where the algorithm's arithmetic is on screen; a guided demo strip; a dispatch panel |
-| "Lack of technical stuff" — the model was only planned | A neural network, trained against the real simulator through a Node↔Python protocol, running in the browser and beating the fixed plan by 15.6% |
+| "Lack of technical stuff" — the model was only planned | A neural network, trained against the real simulator through a Node↔Python protocol, running in the browser and beating the fixed plan by 11.6% |
 | "Lack of understanding of JavaScript" | `docs/CODE_TOUR.md` — every file, the five functions that matter in each, the patterns named, and the ten questions you will be asked with the file and function that answers each |
 
 ---
@@ -53,7 +53,7 @@ biased 2× toward one axis:
 | --- | --- |
 | Fixed plan | 35.28 s |
 | Max-Pressure | 31.95 s |
-| **Trained model** | **29.78 s — 15.6% better than fixed** |
+| **Trained model** | **32.58 s — 11.6% better than fixed** |
 
 `features.js` holds the single definition of the model's input, loaded by both
 the trainer and the browser, so training and deployment cannot drift apart.
@@ -192,7 +192,7 @@ node tools/env-server.js --selftest
    raises the alert before either arrives, with a countdown and two priced
    options. Choose one. The log records the decision, then the measured outcome
    next to the prediction.
-6. **Step 5.** Hand control to the trained model. Say the number: 15.6% better
+6. **Step 5.** Hand control to the trained model. Say the number: 11.6% better
    than the fixed plan on held-out seeds.
 7. **`node tests/run.js`** in a terminal. 21 passed.
 8. **State the gaps** before you are asked: no route choice, no turning

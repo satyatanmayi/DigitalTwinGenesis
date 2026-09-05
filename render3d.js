@@ -30,7 +30,9 @@ const RENDER3D = (function () {
     green: 0x34D399,
     yellow: 0xFBBF24,
     red: 0xF87171,
-    priority: 0xFFFFFF
+    priority: 0xFFFFFF,
+    warn: 0xF59E0B,
+    flood: 0x2563EB
   };
 
   const TYPE_COLOUR = {
@@ -63,7 +65,17 @@ const RENDER3D = (function () {
     host = document.getElementById('three-host');
     if (!host) return false;
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    // Some machines have three.js but no usable WebGL context - a locked-down
+    // venue laptop, a remote desktop session, a browser with hardware
+    // acceleration switched off. Constructing the renderer THROWS there, so it
+    // is caught here and the 3D button refuses politely instead of taking the
+    // whole page down mid-demo.
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+    } catch (err) {
+      renderer = null;
+      return false;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
     renderer.setSize(host.clientWidth, host.clientHeight);
     renderer.setClearColor(COLOURS.ground, 1);
@@ -86,6 +98,8 @@ const RENDER3D = (function () {
     buildRoads();
     buildJunctions();
     buildVehicles();
+    buildScenarioLayer();
+    buildOverlay();
 
     dummy.obj = new THREE.Object3D();
     wireInput();
@@ -276,12 +290,153 @@ const RENDER3D = (function () {
     if (cars.instanceColor) cars.instanceColor.needsUpdate = true;
   }
 
+  /* ================================================================ scenarios
+   * The 2D view draws the state of the world AND what is being done to it: the
+   * flooded road, the ring round a junction with an incident, the decision each
+   * junction just took and why. Without those the 3D view is a pretty
+   * animation - you can see traffic moving but not what the demo is showing
+   * you. So the same four overlays are reproduced here.
+   *
+   * Geometry that belongs in the world (flood water, incident rings) is drawn
+   * as meshes. Text is drawn as HTML positioned over the canvas, because
+   * projected DOM stays crisp at any zoom and reflows properly, whereas a
+   * texture-based label goes blurry the moment someone scrolls in.
+   */
+  const incidentRings = {};          // junctionId -> mesh
+  const floodPlanes = {};            // roadId -> mesh
+  let overlay = null, labelEls = {}, priorityEl = null, bannerEl = null;
+
+  function buildScenarioLayer() {
+    for (const j of SIM.junctions) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry((G.junctionHalf + 10) * SCALE, 0.28, 8, 40),
+        new THREE.MeshBasicMaterial({ color: COLOURS.warn,
+                                      transparent: true, opacity: 0.9 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(sx(j.x), 0.5, sz(j.y));
+      ring.visible = false;
+      scene.add(ring);
+      incidentRings[j.id] = ring;
+    }
+
+    const water = new THREE.MeshStandardMaterial({
+      color: COLOURS.flood, transparent: true, opacity: 0.32, roughness: 0.25
+    });
+    const hw = (G.roadWidth / 2 + 4) * SCALE;
+    G.rows.forEach(function (y, i) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(W * SCALE, 0.5, hw * 2), water);
+      m.position.set(0, 0.3, sz(y));
+      m.visible = false;
+      scene.add(m);
+      floodPlanes['row' + i] = m;
+    });
+    G.cols.forEach(function (x, i) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(hw * 2, 0.5, H * SCALE), water);
+      m.position.set(sx(x), 0.3, 0);
+      m.visible = false;
+      scene.add(m);
+      floodPlanes['col' + i] = m;
+    });
+  }
+
+  function buildOverlay() {
+    overlay = document.createElement('div');
+    overlay.className = 'ov3d';
+    host.appendChild(overlay);
+
+    for (const j of SIM.junctions) {
+      const el = document.createElement('div');
+      el.className = 'ov3d-card';
+      el.innerHTML = '<b></b><span></span>';
+      overlay.appendChild(el);
+      labelEls[j.id] = el;
+    }
+
+    priorityEl = document.createElement('div');
+    priorityEl.className = 'ov3d-priority';
+    priorityEl.textContent = 'PRIORITY';
+    priorityEl.hidden = true;
+    overlay.appendChild(priorityEl);
+
+    bannerEl = document.createElement('div');
+    bannerEl.className = 'ov3d-banner';
+    bannerEl.hidden = true;
+    overlay.appendChild(bannerEl);
+  }
+
+  function updateScenarioMeshes() {
+    for (const j of SIM.junctions) {
+      const ring = incidentRings[j.id];
+      if (ring) ring.visible = !!SENSOR_FEED.incidentActive(j.id);
+    }
+    for (const id in floodPlanes) {
+      floodPlanes[id].visible = !!SIM.conditions.floodedRoads[id];
+    }
+  }
+
+  /** Project a scene point to a pixel position inside the host element. */
+  const projected = { x: 0, y: 0, z: 0 };
+  function toScreen(x, y, z) {
+    projected.x = x; projected.y = y; projected.z = z;
+    const v = new THREE.Vector3(x, y, z).project(camera);
+    return {
+      left: (v.x * 0.5 + 0.5) * host.clientWidth,
+      top: (-v.y * 0.5 + 0.5) * host.clientHeight,
+      behind: v.z > 1
+    };
+  }
+
+  function updateOverlay() {
+    for (const j of SIM.junctions) {
+      const el = labelEls[j.id];
+      if (!el) continue;
+      const p = toScreen(sx(j.x), 5.4, sz(j.y));
+      if (p.behind) { el.hidden = true; continue; }
+      el.hidden = false;
+      el.style.left = p.left + 'px';
+      el.style.top = p.top + 'px';
+
+      const plan = SIM.getPlan(j.id);
+      const source = j.lastSource || 'plan';
+      el.dataset.source = source;
+      el.firstChild.textContent = j.id + '  ' + plan.greenNS + 's NS / ' + plan.greenEW + 's EW';
+      el.lastChild.textContent = j.lastReason || 'Running the fixed plan.';
+      el.classList.toggle('incident', !!SENSOR_FEED.incidentActive(j.id));
+    }
+
+    const pv = SCENARIOS.trackedVehicle();
+    if (pv) {
+      const p = toScreen(sx(pv.x), 3.2, sz(pv.y));
+      priorityEl.hidden = p.behind;
+      priorityEl.style.left = p.left + 'px';
+      priorityEl.style.top = p.top + 'px';
+    } else {
+      priorityEl.hidden = true;
+    }
+
+    // One banner, for whichever thing the audience most needs told in words.
+    const flooded = Object.keys(SIM.conditions.floodedRoads);
+    if (SIM.isPaused()) {
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'PAUSED';
+    } else if (flooded.length) {
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'FLOODED — NO HEAVY VEHICLES ON ' +
+        flooded.map(function (r) { return r.toUpperCase(); }).join(', ');
+    } else {
+      bannerEl.hidden = true;
+    }
+  }
+
   function frame() {
     if (!active || !ready) return;
     updateSignals();
     updateVehicles();
+    updateScenarioMeshes();
     placeCamera();
     renderer.render(scene, camera);
+    updateOverlay();          // after render, so the camera matrix is current
   }
 
   function resize() {

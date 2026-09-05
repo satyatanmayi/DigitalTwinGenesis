@@ -59,13 +59,13 @@ MONO = 'Consolas'
 # ------------------------------------------------------------- every number
 # One source of truth. The figures and the slides both read from here.
 RESULTS = {
-    'delay': [('Fixed-time plan', 35.3), ('Max-Pressure', 32.0), ('Trained model', 29.8)],
+    'delay': [('Fixed-time plan', 36.9), ('Max-Pressure', 33.5), ('Trained model', 32.6)],
     'corridor_trip': (369, 177),
     'corridor_wait': (160, 0),
     'corridor_others_pct': -1.5,
     'sumo_wait': (12.0, 0.0),
     'sumo_trip': (47, 32),
-    'tests': (21, 41),
+    'tests': (21, 44),
     'corridor_km': 1.71,
     'corridor_junctions': 19,
     'osm_signals': 2,
@@ -100,10 +100,10 @@ def fig_delay():
     for b, v in zip(bars, vals):
         ax.text(b.get_x() + b.get_width() / 2, v + 0.15, f'{v:.1f}s',
                 ha='center', color=TEXT, fontsize=17, fontweight='bold')
-    ax.set_ylim(28, 37.4)
+    ax.set_ylim(31, 38.6)
     ax.set_ylabel('average delay per vehicle (s)   —   lower is better', fontsize=11)
     ax.grid(axis='y', color='#242B36', zorder=0)
-    ax.set_yticks([28, 30, 32, 34, 36])
+    ax.set_yticks([32, 34, 36, 38])
     fig.tight_layout()
     p = os.path.join(FIGS, 'delay.png')
     fig.savefig(p, dpi=200, facecolor=BG)
@@ -382,6 +382,7 @@ def fig_training():
     _style(b)
     if probes:
         pe = [h['epoch'] for h in probes]
+        md = [h['modelDelay'] for h in probes]
         b.axhline(probes[0]['fixedDelay'], color=DIM, linewidth=1.6,
                   linestyle='--', zorder=2)
         b.axhline(probes[0]['maxPressureDelay'], color=BLUE, linewidth=1.6,
@@ -395,21 +396,29 @@ def fig_training():
         b.text(pe[0], probes[0]['modelDelay'] - 0.35, 'the model', color=GREEN,
                fontsize=10, va='top', ha='left')
 
-        # Mark the network that actually shipped. This run kept its last epoch,
-        # so that is what is circled - labelling any other point would be a
-        # claim about weights that are not the ones in the file.
-        last = probes[-1]
-        b.scatter([last['epoch']], [last['modelDelay']], s=130, facecolor='none',
+        # Mark the network that actually shipped, and work out which one that
+        # is from the history rather than assuming: a run that recorded
+        # bestSoFar kept its best epoch, an older run kept its last one.
+        selected = any('bestSoFar' in h for h in probes)
+        shipped = min(probes, key=lambda h: h['modelDelay']) if selected else probes[-1]
+        b.scatter([shipped['epoch']], [shipped['modelDelay']], s=130, facecolor='none',
                   edgecolor=AMBER, linewidth=2, zorder=5)
-        b.annotate('this is the shipped model\nepoch %d, %.1fs'
-                   % (last['epoch'], last['modelDelay']),
-                   xy=(last['epoch'], last['modelDelay']),
-                   xytext=(max(pe) * 0.42, last['modelDelay'] - 1.6),
-                   color=AMBER, fontsize=10,
+        b.annotate(('kept: epoch %d, the best score\nnot epoch %d, the last one'
+                    % (shipped['epoch'], probes[-1]['epoch'])) if selected
+                   else 'this is the shipped model\nepoch %d' % shipped['epoch'],
+                   xy=(shipped['epoch'], shipped['modelDelay']),
+                   xytext=(max(pe) * 0.42, min(md) - 0.45),
+                   color=AMBER, fontsize=10, va='center', ha='left',
                    arrowprops=dict(arrowstyle='-|>', color=AMBER, linewidth=1.2))
+        # Headroom below the lowest point and above the fixed-plan line, so the
+        # two annotations have somewhere to sit that is not on top of the axis.
+        b.set_ylim(min(md) - 1.3, max(md + [probes[0]['fixedDelay']]) + 1.0)
         b.set_xlabel('epoch', fontsize=11)
         b.set_ylabel('delay on held-out seeds (s)', fontsize=11)
         b.set_title('Scored on seeds it never trained on', color=TEXT, fontsize=13, pad=12)
+        b.text(pe[0], max(md) + 0.35,
+               'these seeds only CHOOSE the epoch;\nthe headline is measured on a third set',
+               color=DIM, fontsize=9, va='bottom')
         b.grid(color='#242B36', zorder=0)
     else:
         b.axis('off')
@@ -682,8 +691,8 @@ def build():
     title(s, 'Four junctions, same seeded traffic', size=34)
     centred_picture(s, f_delay, 2.0, 8.9)
     text(s, 0.85, 6.6, 11.6, 0.8,
-         'Axis starts at 28s so the gap is visible. Max-Pressure is a genuinely good published '
-         'controller - beating it by 6.8% is the honest claim, not 10x.',
+         'Axis starts at 31s so the gap is visible. Max-Pressure is a genuinely good published '
+         'controller - beating it by 2.6% is the honest claim, not 10x.',
          size=13, color=DIM, italic=True)
 
     # ------------------------------------------------ 11b. proof it trained

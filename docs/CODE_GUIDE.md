@@ -35,7 +35,7 @@ the renderer decide what colour it is.
 | The control room | Open `console.html`, or click **CONTROL ROOM →** in the twin. Keep both tabs open — they talk to each other. |
 | Both at once | `run.bat` |
 | Simulation tests | `node tests/run.js` — 21 assertions, no browser |
-| Browser tests | `node tools/browser-check/check.js` — 41 checks in real Chromium |
+| Browser tests | `node tools/browser-check/check.js` — 44 checks in real Chromium |
 | Screenshots | `node tools/browser-check/check.js --shots` |
 | SUMO work | see `sumo/README.md` |
 

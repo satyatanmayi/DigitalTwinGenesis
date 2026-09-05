@@ -208,21 +208,37 @@
     fill(red(c), green(c), blue(c), 55); ellipse(x, y, 26, 26);
   }
 
-  /* Vehicles are drawn larger than their true size, the way a transport map
+  /* Vehicles are drawn wider than their true size, the way a transport map
    * exaggerates a station symbol: at real scale a two-wheeler is under a
-   * millimetre on a projector and the animation reads as an empty grid. The
-   * PHYSICS uses the true dimensions - only the drawing is enlarged, and the
-   * relative sizes between vehicle types are preserved. */
-  const DRAW_SCALE = 1.9;
-  const MIN_DRAW_W = 7;
+   * millimetre on a projector and the animation reads as an empty grid.
+   *
+   * Width is scaled freely - it is lateral, so it cannot cause a vehicle to
+   * touch the one in front. Opposing lane centres are 32 px apart and the
+   * widest vehicle here draws at 20 px.
+   *
+   * LENGTH IS THE ONE THAT BIT. It used to be scaled by 1.9 as well, and that
+   * is arithmetically guaranteed to overlap: a stopped car is 4.5 m long and
+   * sits 2 m behind the next one, so centres are 26 px apart at 4 px/m - but a
+   * 1.9x car draws 34 px long. Every queue rendered as a pile of overlapping
+   * boxes while the physics underneath was perfectly correct.
+   *
+   * So length is padded by a FRACTION OF THE BUMPER GAP instead of multiplied.
+   * Two vehicles sit at least (lenA + lenB)/2 + MIN_GAP apart, and this draws
+   * them (lenA + lenB)/2 + GAP_USE*MIN_GAP wide. With GAP_USE < 1 the drawn
+   * boxes cannot meet, whatever the vehicle types or the traffic - it holds for
+   * a bus behind a two-wheeler as surely as for two cars. */
+  const WIDTH_SCALE = 2.0;
+  const MIN_DRAW_W = 8;
+  const GAP_USE = 0.7;                        // must stay below 1
+  const LEN_PAD = SIM.PARAMS.minGapM * SIM.PARAMS.pxPerM * GAP_USE;
 
   function drawVehicles() {
     rectMode(CENTER);
     for (const v of SIM.vehicles) {
       const base = TYPE_COLOR[v.type.id] || C.accent;
       const queued = v.speed < 8;
-      const len = v.type.len * DRAW_SCALE;
-      const wid = Math.max(MIN_DRAW_W, v.type.wid * DRAW_SCALE);
+      const len = v.type.len + LEN_PAD;
+      const wid = Math.max(MIN_DRAW_W, v.type.wid * WIDTH_SCALE);
       push();
       translate(v.x, v.y);
       if (v.dir === 'N' || v.dir === 'S') rotate(HALF_PI);
