@@ -237,3 +237,24 @@ body { display: grid; grid-template-columns: 70fr 30fr; }
   .hud-value { font-size: 18px; }
   #insight { font-size: 15px; }
 }
+
+
+/* ------------------------------------------------------------ guided demo
+   A presenter under pressure should not have to remember what to click, and a
+   judge should not have to be told what to look at. */
+#demo-panel { border-color: var(--accent); }
+.demo-steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.demo-steps .step {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 2px; font-size: 9.5px; letter-spacing: .3px; line-height: 1.15;
+  color: var(--text-dim); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 7px; cursor: pointer;
+  font-family: var(--font); text-align: center;
+}
+.demo-steps .step b {
+  font-family: var(--mono); font-size: 14px; color: var(--accent); font-weight: 800;
+}
+.demo-steps .step:hover { border-color: var(--accent); }
+.demo-steps .step.done { border-color: var(--green); }
+.demo-steps .step.done b { color: var(--green); }
+#demo-say { color: var(--text); font-size: 13px; line-height: 1.4; min-height: 34px; }

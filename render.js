@@ -565,6 +565,83 @@
         'opposite phases. Watch the control room window.';
     });
 
+    // ---- guided demo: sets the scene and tells the presenter what to say ----
+    const SCRIPT = {
+      1: {
+        say: 'Four junctions, real vehicles — two-wheelers, autos, cars, buses. ' +
+             'The number top right is average delay per vehicle. That is the one that matters.',
+        run: function () {
+          SCENARIOS.clearAll();
+          SIM.setControlMode('plan');
+          SIM.setPlanAll({ greenNS: 18, greenEW: 18 });
+          SIM.setSpawnRate(1.0);
+          SIM.reset({ seed: SIM.seed(), keepConditions: true });
+          syncTimingInputs();
+          setSeg('btn-plan');
+        }
+      },
+      2: {
+        say: 'East–west green is now 30s instead of 18. Watch east–west drain and ' +
+             'north–south build — I took those seconds from somewhere. Press TEST THIS PLAN ' +
+             'to score it on identical traffic.',
+        run: function () {
+          selectedJunction = 'ALL';
+          document.getElementById('sel-junction').value = 'ALL';
+          SIM.setPlanAll({ greenNS: 12, greenEW: 30 });
+          syncTimingInputs();
+        }
+      },
+      3: {
+        say: 'A collision blocks one approach at J2 — watch the queue grow backwards ' +
+             'into the junction behind it. Then the flooded road: speeds drop and heavy ' +
+             'vehicles are barred, which is why we model five vehicle types.',
+        run: function () {
+          SCENARIOS.accident('J2', 'E');
+          setTimeout(function () { SCENARIOS.flood('row1', 0.45, true); }, 4000);
+        }
+      },
+      4: {
+        say: 'Two ambulances, crossing roads, same junction, opposite phases. Only one ' +
+             'can go. Look at the control room window — it warned before either arrived, ' +
+             'and it priced both options.',
+        run: function () {
+          SCENARIOS.clearAll();
+          SIM.setSpawnRate(1.0);
+          SCENARIOS.twoAmbulances();
+        }
+      },
+      5: {
+        say: 'The trained model is driving now. It was trained inside this simulator, ' +
+             'and it beats the fixed plan by about 11% in the demand pattern it was ' +
+             'trained for. Every decision it makes still passes through the safety limits.',
+        run: function () {
+          SIM.setControlMode('nn');
+          setSeg('btn-nn');
+        }
+      }
+    };
+
+    function setSeg(id) {
+      for (const other in modes) {
+        document.getElementById(other).classList.toggle('active', other === id);
+      }
+      document.getElementById('cap-mode').textContent = caps[modes[id]];
+    }
+
+    document.querySelectorAll('.demo-steps .step').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const step = SCRIPT[btn.dataset.step];
+        if (!step) return;
+        step.run();
+        document.getElementById('demo-say').textContent = step.say;
+        btn.classList.add('done');
+      });
+    });
+
+    document.getElementById('btn-open-console').addEventListener('click', function () {
+      window.open('console.html', 'dtg-console', 'width=1280,height=900');
+    });
+
     window.addEventListener('keydown', function (e) {
       if (e.code === 'Space') { e.preventDefault(); pause.click(); }
     });
