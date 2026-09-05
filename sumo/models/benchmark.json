@@ -1,0 +1,92 @@
+[
+ {
+  "scenario": "east-west peak",
+  "fixed 30s/30s": {
+   "ambulanceWaitingSec": 6.0,
+   "ambulanceTravelSec": 39.0,
+   "networkWaitingSec": 5129.0
+  },
+  "max-pressure": {
+   "ambulanceWaitingSec": 20.0,
+   "ambulanceTravelSec": 59.0,
+   "networkWaitingSec": 6245.0
+  },
+  "trained model": {
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 31.0,
+   "networkWaitingSec": 4854.0
+  }
+ },
+ {
+  "scenario": "north-south peak",
+  "fixed 30s/30s": {
+   "ambulanceWaitingSec": 3.0,
+   "ambulanceTravelSec": 41.0,
+   "networkWaitingSec": 5285.0
+  },
+  "max-pressure": {
+   "ambulanceWaitingSec": 11.0,
+   "ambulanceTravelSec": 51.0,
+   "networkWaitingSec": 5571.0
+  },
+  "trained model": {
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 34.0,
+   "networkWaitingSec": 5424.0
+  }
+ },
+ {
+  "scenario": "ambulance against the flow",
+  "fixed 30s/30s": {
+   "ambulanceWaitingSec": 16.0,
+   "ambulanceTravelSec": 50.0,
+   "networkWaitingSec": 5155.0
+  },
+  "max-pressure": {
+   "ambulanceWaitingSec": 13.0,
+   "ambulanceTravelSec": 47.0,
+   "networkWaitingSec": 6685.0
+  },
+  "trained model": {
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 30.0,
+   "networkWaitingSec": 3320.0
+  }
+ },
+ {
+  "scenario": "both busy",
+  "fixed 30s/30s": {
+   "ambulanceWaitingSec": 9.0,
+   "ambulanceTravelSec": 45.0,
+   "networkWaitingSec": 5421.0
+  },
+  "max-pressure": {
+   "ambulanceWaitingSec": 14.0,
+   "ambulanceTravelSec": 52.0,
+   "networkWaitingSec": 14244.0
+  },
+  "trained model": {
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 30.0,
+   "networkWaitingSec": 8928.0
+  }
+ },
+ {
+  "scenario": "quiet hour",
+  "fixed 30s/30s": {
+   "ambulanceWaitingSec": 26.0,
+   "ambulanceTravelSec": 59.0,
+   "networkWaitingSec": 2411.0
+  },
+  "max-pressure": {
+   "ambulanceWaitingSec": 8.0,
+   "ambulanceTravelSec": 42.0,
+   "networkWaitingSec": 985.0
+  },
+  "trained model": {
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 34.0,
+   "networkWaitingSec": 1626.0
+  }
+ }
+]

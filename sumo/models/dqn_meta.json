@@ -1,0 +1,179 @@
+{
+ "trainedAt": "2026-09-05 18:02",
+ "episodes": 60,
+ "secondsPerEpisode": 600,
+ "stateSize": 12,
+ "actions": [
+  "serve north-south",
+  "serve east-west"
+ ],
+ "decisionSec": 5,
+ "minGreen": 10,
+ "evWeight": 1.0,
+ "stateLayout": [
+  "queueN/20",
+  "queueS/20",
+  "queueE/20",
+  "queueW/20",
+  "waitN/120",
+  "waitS/120",
+  "waitE/120",
+  "waitW/120",
+  "ambulancePresent",
+  "ambulanceCloseness",
+  "ambulanceOnNS",
+  "ambulanceOnEW"
+ ],
+ "history": [
+  {
+   "episode": 51,
+   "reward": -77.54999999999998,
+   "epsilon": 0.19491525423728817,
+   "scenario": {
+    "seed": 39457,
+    "ns": 700,
+    "ew": 400,
+    "ev_at": 218,
+    "ev_axis": "ew"
+   },
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 29.0,
+   "networkWaitingSec": 3271.0
+  },
+  {
+   "episode": 52,
+   "reward": -87.4,
+   "epsilon": 0.1788135593220339,
+   "scenario": {
+    "seed": 86507,
+    "ns": 400,
+    "ew": 800,
+    "ev_at": 209,
+    "ev_axis": "ns"
+   },
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 36.0,
+   "networkWaitingSec": 3658.0
+  },
+  {
+   "episode": 53,
+   "reward": -85.89999999999999,
+   "epsilon": 0.16271186440677976,
+   "scenario": {
+    "seed": 53053,
+    "ns": 800,
+    "ew": 400,
+    "ev_at": 150,
+    "ev_axis": "ns"
+   },
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 36.0,
+   "networkWaitingSec": 3725.0
+  },
+  {
+   "episode": 54,
+   "reward": -66.64999999999998,
+   "epsilon": 0.1466101694915254,
+   "scenario": {
+    "seed": 28075,
+    "ns": 300,
+    "ew": 1000,
+    "ev_at": 286,
+    "ev_axis": "ns"
+   },
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 34.0,
+   "networkWaitingSec": 2723.0
+  },
+  {
+   "episode": 55,
+   "reward": -49.399999999999984,
+   "epsilon": 0.13050847457627124,
+   "scenario": {
+    "seed": 17849,
+    "ns": 300,
+    "ew": 900,
+    "ev_at": 203,
+    "ev_axis": "ew"
+   },
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 34.0,
+   "networkWaitingSec": 2116.0
+  },
+  {
+   "episode": 56,
+   "reward": -415.9,
+   "epsilon": 0.11440677966101698,
+   "scenario": {
+    "seed": 93221,
+    "ns": 900,
+    "ew": 300,
+    "ev_at": 358,
+    "ev_axis": "ew"
+   },
+   "ambulanceWaitingSec": 77.0,
+   "ambulanceTravelSec": 143.0,
+   "networkWaitingSec": 10766.0
+  },
+  {
+   "episode": 57,
+   "reward": -105.1,
+   "epsilon": 0.09830508474576272,
+   "scenario": {
+    "seed": 59068,
+    "ns": 800,
+    "ew": 300,
+    "ev_at": 298,
+    "ev_axis": "ns"
+   },
+   "ambulanceWaitingSec": 0.0,
+   "ambulanceTravelSec": 37.0,
+   "networkWaitingSec": 4450.0
+  },
+  {
+   "episode": 58,
+   "reward": -125.85000000000001,
+   "epsilon": 0.08220338983050857,
+   "scenario": {
+    "seed": 50142,
+    "ns": 800,
+    "ew": 400,
+    "ev_at": 93,
+    "ev_axis": "ns"
+   },
+   "ambulanceWaitingSec": 11.0,
+   "ambulanceTravelSec": 45.0,
+   "networkWaitingSec": 5373.0
+  },
+  {
+   "episode": 59,
+   "reward": -117.99999999999996,
+   "epsilon": 0.0661016949152542,
+   "scenario": {
+    "seed": 9789,
+    "ns": 1000,
+    "ew": 400,
+    "ev_at": 235,
+    "ev_axis": "ew"
+   },
+   "ambulanceWaitingSec": 2.0,
+   "ambulanceTravelSec": 38.0,
+   "networkWaitingSec": 4824.0
+  },
+  {
+   "episode": 60,
+   "reward": -75.64999999999998,
+   "epsilon": 0.050000000000000044,
+   "scenario": {
+    "seed": 92882,
+    "ns": 700,
+    "ew": 500,
+    "ev_at": 242,
+    "ev_axis": "ns"
+   },
+   "ambulanceWaitingSec": 2.0,
+   "ambulanceTravelSec": 40.0,
+   "networkWaitingSec": 3388.0
+  }
+ ]
+}

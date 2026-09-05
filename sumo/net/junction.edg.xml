@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<edges>
+    <!-- Two edges per arm: one inbound, one outbound. The ids are readable on
+         purpose - n2c means "north to centre", and it is what you will see in
+         the logs and in the state vector. -->
+    <edge id="n2c" from="north"  to="centre" numLanes="2" speed="13.9"/>
+    <edge id="c2n" from="centre" to="north"  numLanes="2" speed="13.9"/>
+    <edge id="s2c" from="south"  to="centre" numLanes="2" speed="13.9"/>
+    <edge id="c2s" from="centre" to="south"  numLanes="2" speed="13.9"/>
+    <edge id="e2c" from="east"   to="centre" numLanes="2" speed="13.9"/>
+    <edge id="c2e" from="centre" to="east"   numLanes="2" speed="13.9"/>
+    <edge id="w2c" from="west"   to="centre" numLanes="2" speed="13.9"/>
+    <edge id="c2w" from="centre" to="west"   numLanes="2" speed="13.9"/>
+</edges>

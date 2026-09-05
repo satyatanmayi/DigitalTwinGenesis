@@ -8,3 +8,8 @@ desktop.ini
 .vscode/
 .idea/
 node_modules/
+
+# SUMO scratch output
+sumo/net/*.rou.xml
+sumo/net/trip_test.xml
+!sumo/net/junction.rou.xml
