@@ -1,0 +1,938 @@
+<title>Signal Twin Blueprints</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #F2F5F8;
+    --surface: #FFFFFF;
+    --surface-2: #E9EEF4;
+    --line: #C9D4E0;
+    --text: #101820;
+    --dim: #56687D;
+    --accent: #0E7C8B;
+    --accent-soft: #D6EEF1;
+    --warn: #B45309;
+    --warn-soft: #FBEBD6;
+    --danger: #B91C1C;
+    --good: #16794F;
+    --good-soft: #D8EFE4;
+
+    --display: "Archivo", "Segoe UI", system-ui, sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0B0F16;
+      --surface: #141B25;
+      --surface-2: #1C2531;
+      --line: #2C3846;
+      --text: #E7EEF7;
+      --dim: #90A2B8;
+      --accent: #22D3EE;
+      --accent-soft: #10333D;
+      --warn: #FBAF3F;
+      --warn-soft: #3A2A12;
+      --danger: #F87171;
+      --good: #34D399;
+      --good-soft: #12332A;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0B0F16;
+    --surface: #141B25;
+    --surface-2: #1C2531;
+    --line: #2C3846;
+    --text: #E7EEF7;
+    --dim: #90A2B8;
+    --accent: #22D3EE;
+    --accent-soft: #10333D;
+    --warn: #FBAF3F;
+    --warn-soft: #3A2A12;
+    --danger: #F87171;
+    --good: #34D399;
+    --good-soft: #12332A;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font-family: var(--body);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  header.masthead {
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    padding: 26px 24px 20px;
+  }
+  .masthead-inner {
+    max-width: 1040px; margin: 0 auto;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 6px;
+  }
+  h1 {
+    font-family: var(--display); font-weight: 700; font-size: clamp(26px, 3.4vw, 38px);
+    margin: 0; letter-spacing: -0.01em; text-wrap: balance;
+  }
+  .sub { margin: 8px 0 0; color: var(--dim); max-width: 62ch; font-size: 15px; }
+
+  button.theme {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
+    background: var(--surface-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 9px 16px; cursor: pointer;
+  }
+  button.theme:hover { border-color: var(--accent); }
+  button.theme:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  main { max-width: 1040px; margin: 0 auto; padding: 28px 24px 80px; display: flex; flex-direction: column; gap: 30px; }
+
+  .toc {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .toc h2 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); margin: 0 0 10px; font-weight: 500; }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 30px; font-size: 14px; }
+  .toc a { color: var(--text); text-decoration: none; border-bottom: 1px solid var(--line); }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  figure {
+    margin: 0; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden;
+  }
+  .fig-head {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px 10px; border-bottom: 1px solid var(--line);
+  }
+  .fig-id {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 4px; padding: 2px 7px;
+  }
+  .fig-title { font-family: var(--display); font-weight: 600; font-size: 18px; margin: 0; }
+  .fig-slide { font-family: var(--mono); font-size: 12px; color: var(--dim); margin-left: auto; }
+  .fig-body { padding: 20px 18px; overflow-x: auto; }
+  svg { display: block; width: 100%; height: auto; max-width: 100%; }
+  figcaption { padding: 0 18px 16px; color: var(--dim); font-size: 13.5px; max-width: 78ch; }
+
+  /* SVG semantic classes */
+  .s-line { stroke: var(--line); }
+  .s-text { fill: var(--text); }
+  .s-dim { fill: var(--dim); }
+  .s-accent { stroke: var(--accent); }
+  .f-accent { fill: var(--accent); }
+  .f-surface { fill: var(--surface); }
+  .f-surface2 { fill: var(--surface-2); }
+  .f-accent-soft { fill: var(--accent-soft); }
+  .f-warn-soft { fill: var(--warn-soft); }
+  .f-good-soft { fill: var(--good-soft); }
+  .s-warn { stroke: var(--warn); }
+  .f-warn { fill: var(--warn); }
+  .s-danger { stroke: var(--danger); }
+  .f-danger { fill: var(--danger); }
+  .s-good { stroke: var(--good); }
+  .f-good { fill: var(--good); }
+  .mono { font-family: var(--mono); }
+  .bold { font-weight: 600; }
+  .arrow { stroke: var(--dim); stroke-width: 1.6; fill: none; }
+  .arrowhead { fill: var(--dim); }
+
+  text { font-family: var(--body); font-size: 13px; }
+  text.lbl { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.04em; }
+  text.big { font-family: var(--display); font-size: 17px; font-weight: 600; }
+
+  .note {
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 4px solid var(--accent); border-radius: 8px;
+    padding: 14px 18px; font-size: 14px;
+  }
+  .note strong { font-family: var(--display); }
+  footer { color: var(--dim); font-size: 13px; text-align: center; padding: 0 24px 40px; }
+</style>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div>
+      <p class="eyebrow">Digital Twin Genesis · presentation assets</p>
+      <h1>Signal Twin Blueprints</h1>
+      <p class="sub">Twelve figures for the ideation deck. Screenshot each one straight into a slide — the toggle switches the whole sheet to match a light or dark template.</p>
+    </div>
+    <button class="theme" type="button" id="theme-toggle">SWITCH THEME</button>
+  </div>
+</header>
+
+<main>
+  <nav class="toc">
+    <h2>Figures</h2>
+    <ol>
+      <li><a href="#w1">Where the time actually goes</a></li>
+      <li><a href="#w2">The road is the test environment</a></li>
+      <li><a href="#w3">System architecture</a></li>
+      <li><a href="#w4">PLAN mode — the tuning loop</a></li>
+      <li><a href="#w5">OPERATE mode — the control loop</a></li>
+      <li><a href="#w6">Priority request decision flow</a></li>
+      <li><a href="#w7">Signal state machine</a></li>
+      <li><a href="#w8">Five gaps, five answers</a></li>
+      <li><a href="#w9">How much twin is this?</a></li>
+      <li><a href="#w10">Measured on identical traffic</a></li>
+      <li><a href="#w11">Why five seconds matters</a></li>
+      <li><a href="#w12">Roadmap</a></li>
+    </ol>
+  </nav>
+
+  <!-- ============================================================ W1 -->
+  <figure id="w1">
+    <div class="fig-head">
+      <span class="fig-id">W1</span>
+      <h2 class="fig-title">Where the time actually goes</h2>
+      <span class="fig-slide">slide 2</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 230" role="img" aria-label="A car crossing four signalised junctions on the way to hospital, stopped for 60, 90, 75 and 80 seconds, losing about five minutes standing still.">
+        <defs>
+          <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <rect x="40" y="120" width="880" height="30" rx="3" class="f-surface2" />
+        <line x1="40" y1="135" x2="920" y2="135" class="s-line" stroke-width="1" stroke-dasharray="10 12" />
+
+        <rect x="46" y="124" width="34" height="22" rx="3" class="f-accent" />
+        <text x="63" y="172" class="lbl s-dim" text-anchor="middle">family car</text>
+
+        <g class="s-line" stroke-width="2">
+          <rect x="212" y="112" width="46" height="46" rx="4" class="f-surface2" />
+          <rect x="392" y="112" width="46" height="46" rx="4" class="f-surface2" />
+          <rect x="572" y="112" width="46" height="46" rx="4" class="f-surface2" />
+          <rect x="752" y="112" width="46" height="46" rx="4" class="f-surface2" />
+        </g>
+
+        <g class="f-danger">
+          <circle cx="235" cy="135" r="9" />
+          <circle cx="415" cy="135" r="9" />
+          <circle cx="595" cy="135" r="9" />
+          <circle cx="775" cy="135" r="9" />
+        </g>
+
+        <g class="s-text" text-anchor="middle">
+          <text x="235" y="98" class="lbl s-dim">J1</text>
+          <text x="415" y="98" class="lbl s-dim">J2</text>
+          <text x="595" y="98" class="lbl s-dim">J3</text>
+          <text x="775" y="98" class="lbl s-dim">J4</text>
+          <text x="235" y="76" class="big f-warn">60s</text>
+          <text x="415" y="76" class="big f-warn">90s</text>
+          <text x="595" y="76" class="big f-warn">75s</text>
+          <text x="775" y="76" class="big f-warn">80s</text>
+        </g>
+
+        <g class="s-text">
+          <rect x="856" y="106" width="58" height="58" rx="5" class="f-good-soft" />
+          <rect x="880" y="118" width="10" height="34" class="f-good" />
+          <rect x="868" y="130" width="34" height="10" class="f-good" />
+          <text x="885" y="182" class="lbl s-dim" text-anchor="middle">hospital</text>
+        </g>
+
+        <path d="M 96 135 L 200 135" class="arrow" marker-end="url(#ah1)" />
+        <path d="M 270 135 L 380 135" class="arrow" marker-end="url(#ah1)" />
+        <path d="M 450 135 L 560 135" class="arrow" marker-end="url(#ah1)" />
+        <path d="M 630 135 L 740 135" class="arrow" marker-end="url(#ah1)" />
+        <path d="M 810 135 L 848 135" class="arrow" marker-end="url(#ah1)" />
+
+        <text x="480" y="212" class="big f-warn" text-anchor="middle">≈ 5 minutes lost standing still — none of it on the open road</text>
+      </svg>
+    </div>
+    <figcaption>A ten-kilometre urban drive crosses eight to twelve signalised junctions. The delay is not distance; it is the sum of the stops.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W2 -->
+  <figure id="w2">
+    <div class="fig-head">
+      <span class="fig-id">W2</span>
+      <h2 class="fig-title">The road is the test environment</h2>
+      <span class="fig-slide">slide 4</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 300" role="img" aria-label="Today an engineer changes timing on the live junction and watches real traffic. With a twin, the engineer tests timings in the twin, compares them, and deploys only the plan that won.">
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <text x="30" y="26" class="lbl f-warn bold">TODAY</text>
+        <rect x="20" y="38" width="440" height="238" rx="8" class="f-warn-soft" />
+
+        <rect x="48" y="86" width="120" height="52" rx="5" class="f-surface" stroke-width="1.5" class="s-line" />
+        <rect x="48" y="86" width="120" height="52" rx="5" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="108" y="117" class="s-text" text-anchor="middle">engineer</text>
+
+        <rect x="300" y="86" width="130" height="52" rx="5" fill="none" stroke-width="1.5" class="s-warn" />
+        <text x="365" y="110" class="s-text" text-anchor="middle">live junction</text>
+        <text x="365" y="128" class="lbl s-dim" text-anchor="middle">real queue, real people</text>
+
+        <path d="M 172 104 L 294 104" class="arrow" marker-end="url(#ah2)" />
+        <text x="233" y="94" class="lbl s-dim" text-anchor="middle">change timing</text>
+
+        <path d="M 294 128 L 172 128" class="arrow" marker-end="url(#ah2)" stroke-dasharray="5 5" />
+        <text x="233" y="146" class="lbl s-dim" text-anchor="middle">wait and watch</text>
+
+        <text x="240" y="196" class="s-text bold f-warn" text-anchor="middle">If the change is wrong,</text>
+        <text x="240" y="218" class="s-text bold f-warn" text-anchor="middle">the traffic jam is real.</text>
+        <text x="240" y="248" class="lbl s-dim" text-anchor="middle">no rehearsal · no undo · no record of what was tried</text>
+
+        <text x="510" y="26" class="lbl f-accent bold">WITH A TWIN</text>
+        <rect x="500" y="38" width="440" height="238" rx="8" class="f-accent-soft" />
+
+        <rect x="524" y="86" width="104" height="52" rx="5" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="576" y="117" class="s-text" text-anchor="middle">engineer</text>
+
+        <rect x="668" y="76" width="130" height="72" rx="5" fill="none" stroke-width="1.5" class="s-accent" />
+        <text x="733" y="104" class="s-text" text-anchor="middle">the twin</text>
+        <text x="733" y="124" class="lbl s-dim" text-anchor="middle">identical traffic,</text>
+        <text x="733" y="138" class="lbl s-dim" text-anchor="middle">replayed every test</text>
+
+        <rect x="838" y="86" width="86" height="52" rx="5" fill="none" stroke-width="1.5" class="s-good" />
+        <text x="881" y="110" class="s-text" text-anchor="middle">live</text>
+        <text x="881" y="128" class="s-text" text-anchor="middle">junction</text>
+
+        <path d="M 632 112 L 662 112" class="arrow" marker-end="url(#ah2)" />
+        <path d="M 802 112 L 832 112" class="arrow" marker-end="url(#ah2)" />
+        <text x="880" y="70" class="lbl f-good bold" text-anchor="middle">only the winner</text>
+
+        <path d="M 733 152 C 733 186, 576 186, 576 146" class="arrow s-accent" marker-end="url(#ah2)" />
+        <text x="655" y="204" class="lbl f-accent" text-anchor="middle">try · measure · compare · repeat</text>
+
+        <text x="720" y="248" class="lbl s-dim" text-anchor="middle">every attempt recorded, every comparison on the same traffic</text>
+      </svg>
+    </div>
+    <figcaption>The difference is not the model. It is the loop: today the feedback comes from the street, and with a twin it comes from a rehearsal nobody sits in.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W3 -->
+  <figure id="w3">
+    <div class="fig-head">
+      <span class="fig-id">W3</span>
+      <h2 class="fig-title">System architecture</h2>
+      <span class="fig-slide">slide 10</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 440" role="img" aria-label="Sensor layer feeds the simulation core. Four controllers propose signal changes, all of them passing through one hard-coded safety layer before reaching the core. The core feeds the display. Offline Python tools supply files to the core.">
+        <defs>
+          <marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+          <marker id="ah3r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="f-danger" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <rect x="40" y="28" width="300" height="66" rx="6" fill="none" stroke-width="1.5" class="s-line" stroke-dasharray="6 5" />
+        <text x="190" y="54" class="s-text bold" text-anchor="middle">Sensor layer</text>
+        <text x="190" y="76" class="lbl s-dim" text-anchor="middle">mock gateway, 1 Hz · swap here for real detectors</text>
+
+        <rect x="40" y="140" width="440" height="96" rx="6" fill="none" stroke-width="2" class="s-accent" />
+        <text x="260" y="172" class="big s-text" text-anchor="middle">Simulation core</text>
+        <text x="260" y="196" class="lbl s-dim" text-anchor="middle">car-following physics · signal state machines</text>
+        <text x="260" y="214" class="lbl s-dim" text-anchor="middle">queues · control delay · seeded arrivals</text>
+
+        <path d="M 190 98 L 190 134" class="arrow" marker-end="url(#ah3)" />
+        <text x="200" y="120" class="lbl s-dim">queue snapshots</text>
+
+        <rect x="560" y="28" width="360" height="120" rx="6" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="740" y="54" class="s-text bold" text-anchor="middle">Controllers</text>
+        <g class="lbl s-text" text-anchor="middle">
+          <rect x="580" y="68" width="76" height="30" rx="4" class="f-surface2" />
+          <text x="618" y="88">Fixed plan</text>
+          <rect x="666" y="68" width="76" height="30" rx="4" class="f-surface2" />
+          <text x="704" y="88">Webster</text>
+          <rect x="752" y="68" width="98" height="30" rx="4" class="f-surface2" />
+          <text x="801" y="88">Max-Pressure</text>
+          <rect x="860" y="68" width="42" height="30" rx="4" class="f-surface2" />
+          <text x="881" y="88">AI</text>
+          <text x="740" y="126" class="lbl s-dim">each proposes: extend · switch · hold</text>
+        </g>
+
+        <rect x="560" y="176" width="360" height="72" rx="6" fill="none" stroke-width="2.5" class="s-danger" />
+        <text x="740" y="204" class="s-text bold f-danger" text-anchor="middle">Safety layer — one function, hard-coded</text>
+        <text x="740" y="226" class="lbl s-dim" text-anchor="middle">min green 5s · max green 60s · yellow never skipped</text>
+        <text x="740" y="242" class="lbl s-dim" text-anchor="middle">never learned, never bypassed</text>
+
+        <path d="M 740 152 L 740 170" class="arrow s-danger" marker-end="url(#ah3r)" />
+        <path d="M 556 212 L 486 200" class="arrow s-danger" marker-end="url(#ah3r)" />
+        <text x="520" y="188" class="lbl f-danger" text-anchor="middle">applyAction()</text>
+
+        <rect x="40" y="290" width="440" height="72" rx="6" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="260" y="318" class="s-text bold" text-anchor="middle">Display</text>
+        <text x="260" y="340" class="lbl s-dim" text-anchor="middle">canvas + panels · the only files that draw</text>
+
+        <path d="M 260 242 L 260 284" class="arrow" marker-end="url(#ah3)" />
+        <text x="272" y="268" class="lbl s-dim">plain {x, y} state</text>
+
+        <rect x="560" y="290" width="360" height="112" rx="6" fill="none" stroke-width="1.5" class="s-line" stroke-dasharray="6 5" />
+        <text x="740" y="316" class="s-text bold" text-anchor="middle">Offline tools — Python, never on stage</text>
+        <text x="740" y="338" class="lbl s-dim" text-anchor="middle">SUMO cross-validation · policy training</text>
+        <text x="740" y="356" class="lbl s-dim" text-anchor="middle">QUBO solving · OpenStreetMap fetch</text>
+        <text x="740" y="382" class="lbl f-accent" text-anchor="middle">outputs JSON files the browser reads</text>
+
+        <path d="M 556 346 L 486 330" class="arrow" marker-end="url(#ah3)" stroke-dasharray="5 5" />
+
+        <text x="40" y="424" class="lbl s-dim">Dashed boundaries mark where something real replaces something mocked.</text>
+      </svg>
+    </div>
+    <figcaption>Everything that can change a signal goes through one function, and the safety limits sit underneath it. That is why no controller — including a language model — can starve an approach or skip a yellow.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W4 -->
+  <figure id="w4">
+    <div class="fig-head">
+      <span class="fig-id">W4</span>
+      <h2 class="fig-title">PLAN mode — the tuning loop</h2>
+      <span class="fig-slide">slide 7</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 330" role="img" aria-label="A five step loop: see the target, change the timing, test on identical traffic, read the comparison and insight, keep the best plan, then change the timing again.">
+        <defs>
+          <marker id="ah4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <g class="s-line">
+          <rect x="24" y="96" width="150" height="88" rx="6" fill="none" stroke-width="1.5" />
+          <rect x="222" y="96" width="150" height="88" rx="6" fill="none" stroke-width="1.5" />
+          <rect x="420" y="96" width="150" height="88" rx="6" fill="none" stroke-width="2" class="s-accent" />
+          <rect x="618" y="96" width="150" height="88" rx="6" fill="none" stroke-width="1.5" />
+          <rect x="806" y="96" width="130" height="88" rx="6" fill="none" stroke-width="1.5" />
+        </g>
+
+        <g text-anchor="middle">
+          <text x="99" y="72" class="lbl f-accent">STEP 1</text>
+          <text x="99" y="128" class="s-text bold">See the target</text>
+          <text x="99" y="150" class="lbl s-dim">target 15.0s</text>
+          <text x="99" y="166" class="lbl s-dim">your best 21.4s</text>
+
+          <text x="297" y="72" class="lbl f-accent">STEP 2</text>
+          <text x="297" y="128" class="s-text bold">Change a green</text>
+          <text x="297" y="150" class="lbl s-dim">E–W 18s → 24s</text>
+          <text x="297" y="166" class="lbl s-dim">canvas responds live</text>
+
+          <text x="495" y="72" class="lbl f-accent">STEP 3</text>
+          <text x="495" y="128" class="s-text bold">Test it</text>
+          <text x="495" y="150" class="lbl s-dim">same seed, same cars</text>
+          <text x="495" y="166" class="lbl s-dim">100s measured at 8×</text>
+
+          <text x="693" y="72" class="lbl f-accent">STEP 4</text>
+          <text x="693" y="128" class="s-text bold">Read the verdict</text>
+          <text x="693" y="150" class="lbl s-dim">table + insight line</text>
+          <text x="693" y="166" class="lbl s-dim">tells you what to try</text>
+
+          <text x="871" y="72" class="lbl f-accent">STEP 5</text>
+          <text x="871" y="128" class="s-text bold">Keep the best</text>
+          <text x="871" y="150" class="lbl s-dim">revert any time</text>
+        </g>
+
+        <path d="M 178 140 L 216 140" class="arrow" marker-end="url(#ah4)" />
+        <path d="M 376 140 L 414 140" class="arrow" marker-end="url(#ah4)" />
+        <path d="M 574 140 L 612 140" class="arrow" marker-end="url(#ah4)" />
+        <path d="M 772 140 L 800 140" class="arrow" marker-end="url(#ah4)" />
+
+        <path d="M 871 188 C 871 250, 297 250, 297 188" class="arrow s-accent" marker-end="url(#ah4)" />
+        <text x="584" y="270" class="lbl f-accent" text-anchor="middle">not satisfied? change something else — the traffic never changes, only your plan does</text>
+
+        <rect x="222" y="288" width="516" height="30" rx="5" class="f-accent-soft" />
+        <text x="480" y="308" class="lbl s-text" text-anchor="middle">Any point in the loop: BEAT WEBSTER · BEAT MAX-PRESSURE — the algorithm plays the same round</text>
+      </svg>
+    </div>
+    <figcaption>The seed is what makes this honest: every attempt faces the same cars arriving at the same moments, so a better score is a better plan and not a luckier minute.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W5 -->
+  <figure id="w5">
+    <div class="fig-head">
+      <span class="fig-id">W5</span>
+      <h2 class="fig-title">OPERATE mode — the control loop</h2>
+      <span class="fig-slide">slide 8</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 270" role="img" aria-label="A five stage control loop: sense the junction, decide an action, act on the signal, account for the cost, recover the starved phase, then sense again.">
+        <defs>
+          <marker id="ah5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <g class="s-line" fill="none" stroke-width="1.5">
+          <rect x="24" y="70" width="164" height="86" rx="6" />
+          <rect x="220" y="70" width="164" height="86" rx="6" />
+          <rect x="416" y="70" width="164" height="86" rx="6" />
+          <rect x="612" y="70" width="164" height="86" rx="6" />
+          <rect x="808" y="70" width="128" height="86" rx="6" />
+        </g>
+
+        <g text-anchor="middle">
+          <text x="106" y="52" class="lbl f-accent">SENSE</text>
+          <text x="106" y="102" class="s-text bold">Queues per approach</text>
+          <text x="106" y="124" class="lbl s-dim">N / S / E / W in vehicles</text>
+          <text x="106" y="140" class="lbl s-dim">and in PCU</text>
+
+          <text x="302" y="52" class="lbl f-accent">DECIDE</text>
+          <text x="302" y="102" class="s-text bold">Choose an action</text>
+          <text x="302" y="124" class="lbl s-dim">extend · switch · hold</text>
+          <text x="302" y="140" class="lbl s-dim">with a stated reason</text>
+
+          <text x="498" y="52" class="lbl f-accent">ACT</text>
+          <text x="498" y="102" class="s-text bold">Signal changes</text>
+          <text x="498" y="124" class="lbl s-dim">through the safety layer</text>
+          <text x="498" y="140" class="lbl s-dim">min / max green enforced</text>
+
+          <text x="694" y="52" class="lbl f-accent">ACCOUNT</text>
+          <text x="694" y="102" class="s-text bold">Who paid for it</text>
+          <text x="694" y="124" class="lbl s-dim">delay per approach</text>
+          <text x="694" y="140" class="lbl s-dim">cross-traffic seconds</text>
+
+          <text x="872" y="52" class="lbl f-accent">RECOVER</text>
+          <text x="872" y="102" class="s-text bold">Unstarve</text>
+          <text x="872" y="124" class="lbl s-dim">bias back to the</text>
+          <text x="872" y="140" class="lbl s-dim">phase that waited</text>
+        </g>
+
+        <path d="M 192 113 L 214 113" class="arrow" marker-end="url(#ah5)" />
+        <path d="M 388 113 L 410 113" class="arrow" marker-end="url(#ah5)" />
+        <path d="M 584 113 L 606 113" class="arrow" marker-end="url(#ah5)" />
+        <path d="M 780 113 L 802 113" class="arrow" marker-end="url(#ah5)" />
+
+        <path d="M 872 160 C 872 218, 106 218, 106 160" class="arrow s-accent" marker-end="url(#ah5)" />
+        <text x="489" y="238" class="lbl f-accent" text-anchor="middle">every second — and the whole loop runs the same whether the day is ordinary or a collision has just closed an approach</text>
+      </svg>
+    </div>
+    <figcaption>Most control loops stop at "act". The two stages after it — accounting for who paid, and deliberately recovering the starved phase — are the ones that make a decision reviewable afterwards.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W6 -->
+  <figure id="w6">
+    <div class="fig-head">
+      <span class="fig-id">W6</span>
+      <h2 class="fig-title">Priority request decision flow</h2>
+      <span class="fig-slide">slide 11</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 490" role="img" aria-label="A priority request is scored, checked against the network delay budget, checked for conflict with a higher scoring request, then granted, queued or refused, with the cost ledger recorded after a grant.">
+        <defs>
+          <marker id="ah6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <rect x="330" y="16" width="300" height="62" rx="6" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="480" y="40" class="s-text bold" text-anchor="middle">Priority request arrives</text>
+        <text x="480" y="62" class="lbl s-dim" text-anchor="middle">severity class · verification status · route</text>
+
+        <rect x="676" y="16" width="266" height="62" rx="6" fill="none" stroke-width="1.5" class="s-line" stroke-dasharray="6 5" />
+        <text x="809" y="42" class="lbl s-dim" text-anchor="middle">verification source: external</text>
+        <text x="809" y="60" class="lbl s-dim" text-anchor="middle">out of scope for this tool</text>
+        <path d="M 670 47 L 636 47" class="arrow" marker-end="url(#ah6)" stroke-dasharray="4 4" />
+
+        <rect x="330" y="106" width="300" height="76" rx="6" fill="none" stroke-width="2" class="s-accent" />
+        <text x="480" y="132" class="s-text bold" text-anchor="middle">Score it — arithmetic shown</text>
+        <text x="480" y="154" class="lbl s-dim" text-anchor="middle">severity + verification + seconds waited</text>
+        <text x="480" y="170" class="lbl s-dim" text-anchor="middle">− route length − current network load</text>
+        <path d="M 480 82 L 480 100" class="arrow" marker-end="url(#ah6)" />
+
+        <path d="M 480 206 L 640 250 L 480 294 L 320 250 Z" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="480" y="245" class="s-text bold" text-anchor="middle">Network queue</text>
+        <text x="480" y="264" class="s-text bold" text-anchor="middle">within budget?</text>
+        <path d="M 480 186 L 480 202" class="arrow" marker-end="url(#ah6)" />
+
+        <rect x="702" y="222" width="234" height="58" rx="6" fill="none" stroke-width="2" class="s-danger" />
+        <text x="819" y="246" class="s-text bold f-danger" text-anchor="middle">REFUSED</text>
+        <text x="819" y="266" class="lbl s-dim" text-anchor="middle">names the budget it exceeded</text>
+        <path d="M 644 250 L 696 250" class="arrow s-danger" marker-end="url(#ah6)" />
+        <text x="670" y="240" class="lbl f-danger" text-anchor="middle">no</text>
+
+        <path d="M 480 318 L 640 362 L 480 406 L 320 362 Z" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="480" y="357" class="s-text bold" text-anchor="middle">Higher-scoring request</text>
+        <text x="480" y="376" class="s-text bold" text-anchor="middle">holds a junction on the route?</text>
+        <path d="M 480 298 L 480 314" class="arrow" marker-end="url(#ah6)" />
+        <text x="494" y="310" class="lbl s-dim">yes</text>
+
+        <rect x="702" y="334" width="234" height="58" rx="6" fill="none" stroke-width="2" class="s-warn" />
+        <text x="819" y="358" class="s-text bold f-warn" text-anchor="middle">QUEUED</text>
+        <text x="819" y="378" class="lbl s-dim" text-anchor="middle">states what it waits on, re-checked</text>
+        <path d="M 644 362 L 696 362" class="arrow s-warn" marker-end="url(#ah6)" />
+        <text x="670" y="352" class="lbl f-warn" text-anchor="middle">yes</text>
+
+        <rect x="24" y="334" width="234" height="58" rx="6" fill="none" stroke-width="2" class="s-good" />
+        <text x="141" y="358" class="s-text bold f-good" text-anchor="middle">GRANTED</text>
+        <text x="141" y="378" class="lbl s-dim" text-anchor="middle">holds the phase along the route</text>
+        <path d="M 316 362 L 264 362" class="arrow s-good" marker-end="url(#ah6)" />
+        <text x="290" y="352" class="lbl f-good" text-anchor="middle">no</text>
+
+        <rect x="24" y="422" width="234" height="52" rx="6" class="f-good-soft" />
+        <text x="141" y="444" class="s-text bold" text-anchor="middle">Ledger + recovery</text>
+        <text x="141" y="463" class="lbl s-dim" text-anchor="middle">saved vs paid · unstarve the cross phase</text>
+        <path d="M 141 396 L 141 416" class="arrow s-good" marker-end="url(#ah6)" />
+
+        <text x="330" y="446" class="lbl s-dim">Every outcome carries a reason a human can read —</text>
+        <text x="330" y="466" class="lbl s-dim">the same requirement a traffic authority would place on any automatic decision.</text>
+      </svg>
+    </div>
+    <figcaption>Refusal and queueing are features, not failures. A network that can only say yes to priority requests is a network that cannot be opened to more than a handful of vehicles.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W7 -->
+  <figure id="w7">
+    <div class="fig-head">
+      <span class="fig-id">W7</span>
+      <h2 class="fig-title">Signal state machine</h2>
+      <span class="fig-slide">slide 10 · backup</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 280" role="img" aria-label="The signal cycles from north-south green to yellow to all red to east-west green to yellow to all red and back, with minimum green, maximum green and controller actions annotated.">
+        <defs>
+          <marker id="ah7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <g fill="none" stroke-width="2">
+          <rect x="40" y="92" width="150" height="70" rx="8" class="s-good" />
+          <rect x="248" y="92" width="120" height="70" rx="8" class="s-warn" />
+          <rect x="426" y="92" width="120" height="70" rx="8" class="s-danger" />
+          <rect x="604" y="92" width="150" height="70" rx="8" class="s-good" />
+          <rect x="812" y="92" width="120" height="70" rx="8" class="s-warn" />
+        </g>
+
+        <g text-anchor="middle">
+          <text x="115" y="124" class="big s-text">NS GREEN</text>
+          <text x="115" y="146" class="lbl s-dim">serves north + south</text>
+          <text x="308" y="124" class="big s-text">YELLOW</text>
+          <text x="308" y="146" class="lbl s-dim">3.0 s</text>
+          <text x="486" y="124" class="big s-text">ALL RED</text>
+          <text x="486" y="146" class="lbl s-dim">1.0 s</text>
+          <text x="679" y="124" class="big s-text">EW GREEN</text>
+          <text x="679" y="146" class="lbl s-dim">serves east + west</text>
+          <text x="872" y="124" class="big s-text">YELLOW</text>
+          <text x="872" y="146" class="lbl s-dim">3.0 s</text>
+        </g>
+
+        <path d="M 194 127 L 242 127" class="arrow" marker-end="url(#ah7)" />
+        <path d="M 372 127 L 420 127" class="arrow" marker-end="url(#ah7)" />
+        <path d="M 550 127 L 598 127" class="arrow" marker-end="url(#ah7)" />
+        <path d="M 758 127 L 806 127" class="arrow" marker-end="url(#ah7)" />
+
+        <path d="M 872 166 C 872 222, 115 222, 115 166" class="arrow" marker-end="url(#ah7)" />
+        <text x="494" y="242" class="lbl s-dim" text-anchor="middle">all red, then back to the top — conflicting movements are impossible by construction</text>
+
+        <rect x="40" y="24" width="714" height="44" rx="6" class="f-accent-soft" />
+        <text x="60" y="42" class="lbl s-text bold">Controller actions enter only at a green:</text>
+        <text x="60" y="60" class="lbl s-dim">extend (+4 s, never past 60 s max green) · switch (end now, never before 5 s min green) · hold (do nothing)</text>
+      </svg>
+    </div>
+    <figcaption>Round robin between two phase pairs, with a minimum quantum and a starvation ceiling. Every controller can only nudge the timer inside those bounds — it cannot invent a state.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W8 -->
+  <figure id="w8">
+    <div class="fig-head">
+      <span class="fig-id">W8</span>
+      <h2 class="fig-title">Five gaps, five answers</h2>
+      <span class="fig-slide">slides 5 and 9</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 400" role="img" aria-label="Five known limitations of adaptive traffic control on the left, each mapped by an arrow to what the twin does about it on the right.">
+        <defs>
+          <marker id="ah8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <text x="30" y="26" class="lbl f-warn bold">WHAT ADAPTIVE CONTROL STRUGGLES WITH</text>
+        <text x="560" y="26" class="lbl f-accent bold">WHAT THE TWIN DOES</text>
+
+        <g class="f-warn-soft">
+          <rect x="24" y="42" width="400" height="56" rx="6" />
+          <rect x="24" y="112" width="400" height="56" rx="6" />
+          <rect x="24" y="182" width="400" height="56" rx="6" />
+          <rect x="24" y="252" width="400" height="56" rx="6" />
+          <rect x="24" y="322" width="400" height="56" rx="6" />
+        </g>
+        <g class="f-accent-soft">
+          <rect x="540" y="42" width="396" height="56" rx="6" />
+          <rect x="540" y="112" width="396" height="56" rx="6" />
+          <rect x="540" y="182" width="396" height="56" rx="6" />
+          <rect x="540" y="252" width="396" height="56" rx="6" />
+          <rect x="540" y="322" width="396" height="56" rx="6" />
+        </g>
+
+        <g class="s-text">
+          <text x="44" y="66" class="bold">City-wide sensors and cameras cost a fortune</text>
+          <text x="44" y="86" class="lbl s-dim">the barrier to adopting adaptive control at all</text>
+
+          <text x="44" y="136" class="bold">One blocked camera degrades the whole junction</text>
+          <text x="44" y="156" class="lbl s-dim">performance drops until someone repairs it</text>
+
+          <text x="44" y="206" class="bold">Plan transitions and legacy controllers waste time</text>
+          <text x="44" y="226" class="lbl s-dim">switching plans is itself a source of delay</text>
+
+          <text x="44" y="276" class="bold">Rare events are what models have never seen</text>
+          <text x="44" y="296" class="lbl s-dim">accidents, closures, manual diversions</text>
+
+          <text x="44" y="346" class="bold">Mixed traffic breaks queue estimation</text>
+          <text x="44" y="366" class="lbl s-dim">two-wheelers and autos, no lane discipline</text>
+        </g>
+
+        <g class="s-text">
+          <text x="560" y="66" class="bold">Costs a laptop to try a plan</text>
+          <text x="560" y="86" class="lbl s-dim">no hardware needed to evaluate a timing</text>
+
+          <text x="560" y="136" class="bold">Sensor failure is a rehearsal, not a surprise</text>
+          <text x="560" y="156" class="lbl s-dim">degraded-controller scenario you can practise</text>
+
+          <text x="560" y="206" class="bold">Test the new plan before you switch to it</text>
+          <text x="560" y="226" class="lbl s-dim">on identical replayed traffic</text>
+
+          <text x="560" y="276" class="bold">Rare events are the main feature</text>
+          <text x="560" y="296" class="lbl s-dim">collision, flood, surge, failure — one click each</text>
+
+          <text x="560" y="346" class="bold">Five vehicle types with PCU weighting</text>
+          <text x="560" y="366" class="lbl s-dim">2-wheeler 0.25 · auto 0.5 · car 1 · truck 2.2 · bus 3</text>
+        </g>
+
+        <g class="arrow s-accent">
+          <path d="M 432 70 L 532 70" marker-end="url(#ah8)" />
+          <path d="M 432 140 L 532 140" marker-end="url(#ah8)" />
+          <path d="M 432 210 L 532 210" marker-end="url(#ah8)" />
+          <path d="M 432 280 L 532 280" marker-end="url(#ah8)" />
+          <path d="M 432 350 L 532 350" marker-end="url(#ah8)" />
+        </g>
+      </svg>
+    </div>
+    <figcaption>Not a replacement for adaptive control — the thing that should sit next to it. Every row on the left is a documented limitation, not one we invented to knock down.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W9 -->
+  <figure id="w9">
+    <div class="fig-head">
+      <span class="fig-id">W9</span>
+      <h2 class="fig-title">How much twin is this?</h2>
+      <span class="fig-slide">slide 12 · answers the hard question</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 300" role="img" aria-label="Three links between the physical junction and the twin: geometry imported and connected, sensor data mocked at a documented seam, and the control path back to the real controller named but not connected.">
+        <defs>
+          <marker id="ah9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <polygon class="arrowhead" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <rect x="24" y="46" width="300" height="220" rx="8" fill="none" stroke-width="1.5" class="s-line" />
+        <text x="174" y="30" class="lbl s-dim bold" text-anchor="middle">PHYSICAL JUNCTION</text>
+        <g text-anchor="middle" class="s-text">
+          <rect x="52" y="72" width="244" height="46" rx="5" class="f-surface2" />
+          <text x="174" y="101">road layout and spacing</text>
+          <rect x="52" y="134" width="244" height="46" rx="5" class="f-surface2" />
+          <text x="174" y="163">detectors and cameras</text>
+          <rect x="52" y="196" width="244" height="46" rx="5" class="f-surface2" />
+          <text x="174" y="225">the signal controller</text>
+        </g>
+
+        <rect x="636" y="46" width="300" height="220" rx="8" fill="none" stroke-width="2" class="s-accent" />
+        <text x="786" y="30" class="lbl f-accent bold" text-anchor="middle">THE TWIN</text>
+        <g text-anchor="middle" class="s-text">
+          <rect x="664" y="72" width="244" height="46" rx="5" class="f-accent-soft" />
+          <text x="786" y="101">imported geometry</text>
+          <rect x="664" y="134" width="244" height="46" rx="5" class="f-accent-soft" />
+          <text x="786" y="163">sensor feed, 1 Hz</text>
+          <rect x="664" y="196" width="244" height="46" rx="5" class="f-accent-soft" />
+          <text x="786" y="225">signal state machines</text>
+        </g>
+
+        <path d="M 330 95 L 630 95" class="arrow s-good" stroke-width="2" marker-end="url(#ah9)" />
+        <text x="480" y="84" class="lbl f-good bold" text-anchor="middle">CONNECTED — OpenStreetMap import</text>
+
+        <path d="M 330 157 L 630 157" class="arrow s-warn" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#ah9)" />
+        <text x="480" y="146" class="lbl f-warn bold" text-anchor="middle">MOCKED — one function is the swap point</text>
+
+        <path d="M 630 219 L 330 219" class="arrow s-danger" stroke-width="2" stroke-dasharray="2 6" marker-end="url(#ah9)" />
+        <text x="480" y="208" class="lbl f-danger bold" text-anchor="middle">NOT CONNECTED — NTCIP 1211 adapter</text>
+
+        <text x="480" y="284" class="s-text bold" text-anchor="middle">A partial twin, and the app says so on screen.</text>
+      </svg>
+    </div>
+    <figcaption>A digital twin is defined by synchronisation with a real counterpart. Of the three links that would make this complete, one is connected, one is mocked at a documented seam, and one is named but not built — stating that is stronger than claiming otherwise.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W10 -->
+  <figure id="w10">
+    <div class="fig-head">
+      <span class="fig-id">W10</span>
+      <h2 class="fig-title">Measured on identical traffic</h2>
+      <span class="fig-slide">slide 13</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 300" role="img" aria-label="Bar chart of average control delay per vehicle: balanced 18 by 18 second plan gives 16.7 seconds, skewed 25 by 8 gives 21.0 seconds, shown against Highway Capacity Manual level of service bands.">
+        <rect x="150" y="40" width="129" height="170" class="f-good-soft" />
+        <rect x="279" y="40" width="194" height="170" class="f-accent-soft" />
+        <rect x="473" y="40" width="258" height="170" class="f-warn-soft" />
+        <text x="214" y="32" class="lbl f-good" text-anchor="middle">LOS B · 10–20s</text>
+        <text x="376" y="32" class="lbl f-accent" text-anchor="middle">LOS C · 20–35s</text>
+        <text x="602" y="32" class="lbl f-warn" text-anchor="middle">LOS D · 35–55s</text>
+
+        <line x1="150" y1="210" x2="900" y2="210" class="s-line" stroke-width="1.5" />
+        <g class="lbl s-dim" text-anchor="middle">
+          <text x="150" y="230">0</text>
+          <text x="279" y="230">10</text>
+          <text x="408" y="230">20</text>
+          <text x="537" y="230">30</text>
+          <text x="666" y="230">40</text>
+          <text x="795" y="230">50</text>
+          <text x="525" y="256">average control delay per vehicle (seconds)</text>
+        </g>
+
+        <rect x="150" y="60" width="215" height="40" rx="3" class="f-good" />
+        <text x="140" y="85" class="s-text bold" text-anchor="end">Balanced 18s / 18s</text>
+        <text x="379" y="85" class="mono bold f-good">16.7s</text>
+
+        <rect x="150" y="126" width="271" height="40" rx="3" class="f-warn" />
+        <text x="140" y="151" class="s-text bold" text-anchor="end">Skewed 25s / 8s</text>
+        <text x="435" y="151" class="mono bold f-warn">21.0s</text>
+
+        <text x="150" y="288" class="lbl s-dim">Same junction, same seed, same 100 measured seconds — the only thing that changed was the plan.</text>
+      </svg>
+    </div>
+    <figcaption>Level of service is the profession's own yardstick, so the numbers mean something outside this tool. Deliberately skewing a balanced plan costs 4.3 seconds per vehicle and drops the junction a whole grade.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W11 -->
+  <figure id="w11">
+    <div class="fig-head">
+      <span class="fig-id">W11</span>
+      <h2 class="fig-title">Why five seconds matters</h2>
+      <span class="fig-slide">slide 14</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 220" role="img" aria-label="One junction with two thousand vehicles per hour, saving five seconds each, equals two point eight vehicle hours saved every hour, about thirty-three vehicle hours across a twelve hour day.">
+        <g class="s-line" fill="none" stroke-width="1.5">
+          <rect x="24" y="56" width="180" height="82" rx="6" />
+          <rect x="264" y="56" width="180" height="82" rx="6" />
+          <rect x="504" y="56" width="180" height="82" rx="6" />
+        </g>
+        <rect x="744" y="46" width="192" height="102" rx="6" class="f-accent-soft" />
+
+        <g text-anchor="middle">
+          <text x="114" y="94" class="big s-text">1 junction</text>
+          <text x="114" y="118" class="lbl s-dim">a busy one</text>
+
+          <text x="354" y="94" class="big s-text">2,000 veh / h</text>
+          <text x="354" y="118" class="lbl s-dim">typical urban arterial</text>
+
+          <text x="594" y="94" class="big s-text">5 s saved each</text>
+          <text x="594" y="118" class="lbl s-dim">one small retiming</text>
+
+          <text x="840" y="88" class="big f-accent">2.8 vehicle-hours</text>
+          <text x="840" y="110" class="big f-accent">saved every hour</text>
+          <text x="840" y="134" class="lbl s-dim">≈ 33 vehicle-hours a day</text>
+        </g>
+
+        <g class="f-accent" font-family="var(--mono)" font-size="24" text-anchor="middle">
+          <text x="234" y="104">×</text>
+          <text x="474" y="104">×</text>
+          <text x="714" y="104">=</text>
+        </g>
+
+        <text x="24" y="184" class="lbl s-dim">Bengaluru's adaptive system covers about 165 junctions.</text>
+        <text x="24" y="204" class="lbl s-dim">Illustrative arithmetic from published volumes — not a measured claim about any deployment.</text>
+      </svg>
+    </div>
+    <figcaption>The point of the sum is not the total. It is that a five-second improvement, which sounds trivial, is worth a day of somebody's engineering time at a single junction.</figcaption>
+  </figure>
+
+  <!-- ============================================================ W12 -->
+  <figure id="w12">
+    <div class="fig-head">
+      <span class="fig-id">W12</span>
+      <h2 class="fig-title">Roadmap</h2>
+      <span class="fig-slide">slide 15</span>
+    </div>
+    <div class="fig-body">
+      <svg viewBox="0 0 960 230" role="img" aria-label="Roadmap in three bands: done, next, and later, from timing control and seeded testing through arbitration and real map import to quantum and learned control.">
+        <defs>
+          <marker id="ah12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+            <polygon class="f-accent" points="0,0 10,5 0,10" />
+          </marker>
+        </defs>
+
+        <line x1="24" y1="46" x2="910" y2="46" class="s-accent" stroke-width="2" marker-end="url(#ah12)" />
+
+        <rect x="24" y="66" width="292" height="128" rx="8" class="f-good-soft" />
+        <rect x="336" y="66" width="292" height="128" rx="8" fill="none" stroke-width="2" class="s-accent" />
+        <rect x="648" y="66" width="288" height="128" rx="8" fill="none" stroke-width="1.5" class="s-line" stroke-dasharray="6 5" />
+
+        <text x="40" y="94" class="lbl f-good bold">DONE — demonstrable today</text>
+        <g class="s-text lbl">
+          <text x="40" y="118">timing control · seeded A/B testing</text>
+          <text x="40" y="138">five vehicle types with PCU</text>
+          <text x="40" y="158">incidents · flood · surge · failure</text>
+          <text x="40" y="178">priority receipt · model specification</text>
+        </g>
+
+        <text x="352" y="94" class="lbl f-accent bold">NEXT — the 30-hour window</text>
+        <g class="s-text lbl">
+          <text x="352" y="118">many priority requests at once</text>
+          <text x="352" y="138">green-wave coordination</text>
+          <text x="352" y="158">real junction from OpenStreetMap</text>
+          <text x="352" y="178">cross-check against SUMO</text>
+        </g>
+
+        <text x="664" y="94" class="lbl s-dim bold">LATER</text>
+        <g class="s-dim lbl">
+          <text x="664" y="118">quantum-ready phase selection</text>
+          <text x="664" y="138">learned controller</text>
+          <text x="664" y="158">3D view</text>
+          <text x="664" y="178">export for planners</text>
+        </g>
+
+        <text x="24" y="220" class="lbl s-dim">Each band is ordered by how much it deepens the core, not by how impressive it sounds.</text>
+      </svg>
+    </div>
+    <figcaption>Everything in the first band runs today. Nothing in the third band is needed for the project to be complete, which is what makes the plan credible rather than aspirational.</figcaption>
+  </figure>
+
+  <div class="note">
+    <strong>Screenshotting into slides.</strong> Zoom the browser to about 150% before capturing so the text stays crisp on a projector, and grab only the figure area, not the card header. If your deck template is light, hit <em>Switch theme</em> first — every figure re-colours, including the arrows and labels.
+  </div>
+</main>
+
+<footer>
+  Digital Twin Genesis · figures generated for the ideation round · numbers from headless runs of the simulator
+</footer>
+
+<script>
+  (function () {
+    var btn = document.getElementById('theme-toggle');
+    var root = document.documentElement;
+    function current() {
+      if (root.getAttribute('data-theme')) return root.getAttribute('data-theme');
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    try {
+      var saved = localStorage.getItem('dtg-diagram-theme');
+      if (saved) root.setAttribute('data-theme', saved);
+    } catch (e) {}
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('dtg-diagram-theme', next); } catch (e) {}
+    });
+  })();
+</script>

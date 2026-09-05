@@ -1,0 +1,829 @@
+<title>Digital Twin Genesis</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{
+    --ground:#060910; --surface:#101722; --surface2:#18212E; --line:#26303E;
+    --text:#E9F0F8; --dim:#8DA0B7;
+    --accent:#22D3EE; --accent-2:#67E8F9; --accent-soft:#0D3541;
+    --warn:#FBAF3F; --warn-soft:#34260F;
+    --good:#34D399; --good-soft:#0F3128;
+    --danger:#F87171;
+    --display:"Archivo","Segoe UI",system-ui,sans-serif;
+    --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",Consolas,monospace;
+    --maxw:1120px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;background:var(--ground);color:var(--text);
+    font-family:var(--body);line-height:1.6;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;}
+
+  /* ---------------- nav ---------------- */
+  nav{
+    position:sticky;top:0;z-index:40;backdrop-filter:blur(12px);
+    background:rgba(6,9,16,.82);border-bottom:1px solid var(--line);
+  }
+  nav .wrap{display:flex;align-items:center;gap:26px;height:62px;}
+  .brand{font-family:var(--display);font-weight:800;letter-spacing:-.01em;font-size:17px;}
+  .brand span{color:var(--accent);}
+  nav ul{list-style:none;display:flex;gap:22px;margin:0 0 0 auto;padding:0;}
+  nav a{color:var(--dim);text-decoration:none;font-size:14.5px;}
+  nav a:hover{color:var(--text);}
+  nav .cta{
+    border:1px solid var(--accent);color:var(--accent);border-radius:999px;
+    padding:7px 15px;font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-decoration:none;
+  }
+  nav .cta:hover{background:var(--accent-soft);}
+
+  /* ---------------- hero ---------------- */
+  header.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);}
+  #bg{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  header.hero::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(6,9,16,.35) 0%,rgba(6,9,16,.55) 45%,rgba(6,9,16,.95) 100%);
+  }
+  .hero-inner{position:relative;z-index:2;padding:104px 0 92px;}
+  .kicker{
+    font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 18px;
+  }
+  h1{
+    font-family:var(--display);font-weight:800;font-size:clamp(42px,6.4vw,78px);
+    line-height:1.02;letter-spacing:-.025em;margin:0;max-width:16ch;text-wrap:balance;
+  }
+  .hero p.lede{font-size:20px;color:var(--dim);max-width:56ch;margin:24px 0 0;}
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:34px;}
+  .btn{
+    font-family:var(--mono);font-size:14px;letter-spacing:.05em;text-decoration:none;
+    padding:13px 22px;border-radius:8px;border:1px solid var(--line);color:var(--text);
+    background:var(--surface);
+  }
+  .btn.primary{background:var(--accent);color:#04141A;border-color:var(--accent);font-weight:500;}
+  .btn:hover{border-color:var(--accent);}
+  .hero-note{
+    position:relative;z-index:2;font-family:var(--mono);font-size:12.5px;color:var(--dim);
+    padding-bottom:26px;
+  }
+
+  /* ---------------- sections ---------------- */
+  section{padding:86px 0;border-bottom:1px solid var(--line);}
+  .eyebrow{
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 14px;
+  }
+  .eyebrow.warn{color:var(--warn);}
+  h2{font-family:var(--display);font-weight:700;font-size:clamp(30px,3.6vw,42px);
+     line-height:1.1;letter-spacing:-.02em;margin:0 0 16px;max-width:22ch;text-wrap:balance;}
+  h3{font-family:var(--display);font-weight:600;font-size:21px;margin:0 0 8px;}
+  p.body{font-size:17.5px;color:var(--dim);max-width:64ch;margin:0 0 16px;}
+  p.body strong{color:var(--text);font-weight:600;}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:36px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;}
+  .card p{margin:0;color:var(--dim);font-size:16px;}
+  .card .tag{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.1em;}
+
+  .statline{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:34px;}
+  .statline div{border-left:3px solid var(--line);padding-left:16px;}
+  .statline .n{font-family:var(--display);font-size:34px;font-weight:800;color:var(--accent-2);line-height:1.1;}
+  .statline .k{font-size:14.5px;color:var(--dim);margin-top:4px;}
+  .statline div.warn{border-left-color:var(--warn);}
+  .statline div.warn .n{color:var(--warn);}
+
+  ul.gaps{list-style:none;margin:30px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  ul.gaps li{
+    display:flex;gap:14px;align-items:flex-start;background:var(--surface);
+    border:1px solid var(--line);border-left:3px solid var(--warn);border-radius:10px;padding:16px 18px;
+  }
+  ul.gaps b{font-family:var(--mono);font-size:12px;color:var(--warn);flex:0 0 auto;padding-top:3px;}
+  ul.gaps span{font-size:16px;}
+  ul.gaps small{display:block;color:var(--dim);font-size:14px;margin-top:3px;}
+
+  /* ---------------- playground ---------------- */
+  .play{
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:26px;margin-top:34px;display:grid;grid-template-columns:1.15fr .85fr;gap:30px;
+  }
+  .play canvas{width:100%;height:auto;background:#0A0F17;border-radius:12px;display:block;}
+  .ctl{display:flex;flex-direction:column;gap:20px;}
+  .ctl label{display:block;}
+  .ctl .lbl{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--dim);margin-bottom:8px;
+  }
+  .ctl .lbl b{color:var(--accent-2);font-size:15px;font-weight:500;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .readout{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .readout div{background:var(--surface2);border-radius:10px;padding:14px 16px;}
+  .readout .n{font-family:var(--display);font-size:30px;font-weight:800;line-height:1;}
+  .readout .k{font-family:var(--mono);font-size:11.5px;color:var(--dim);letter-spacing:.08em;margin-top:6px;}
+  .los{display:inline-block;font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:5px;margin-left:8px;}
+  .best{font-family:var(--mono);font-size:13px;color:var(--dim);}
+  .play .hint{font-size:14px;color:var(--dim);margin:0;}
+
+  /* ---------------- architecture ---------------- */
+  .arch{margin-top:34px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px;overflow-x:auto;}
+  .arch svg{width:100%;min-width:640px;height:auto;display:block;}
+  .sl{stroke:var(--line);} .sa{stroke:var(--accent);} .sd{stroke:var(--danger);}
+  .ft{fill:var(--text);} .fd{fill:var(--dim);} .fa{fill:var(--accent);} .fdg{fill:var(--danger);}
+  .bs2{fill:var(--surface2);} .ar{stroke:var(--dim);stroke-width:1.8;fill:none;} .ah{fill:var(--dim);}
+  .arch text{font-family:var(--body);font-size:14px;}
+  .arch text.m{font-family:var(--mono);font-size:12px;}
+  .arch text.b{font-family:var(--display);font-size:16px;font-weight:600;}
+
+  table.spec{width:100%;border-collapse:collapse;margin-top:30px;font-size:15.5px;}
+  table.spec th{
+    text-align:left;font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--dim);font-weight:500;padding:0 14px 10px 0;border-bottom:1px solid var(--line);
+  }
+  table.spec td{padding:13px 14px 13px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.spec td.k{font-family:var(--mono);font-size:13.5px;color:var(--accent-2);white-space:nowrap;}
+  table.spec td.v{color:var(--dim);}
+
+  .roadmap{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:34px;}
+  .band{border-radius:14px;padding:24px;}
+  .band.done{background:var(--good-soft);border:1px solid var(--good);}
+  .band.next{background:var(--surface);border:1px solid var(--accent);}
+  .band.later{background:var(--surface);border:1px dashed var(--line);}
+  .band h3{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin:0 0 14px;}
+  .band.done h3{color:var(--good);} .band.next h3{color:var(--accent);} .band.later h3{color:var(--dim);}
+  .band ul{margin:0;padding-left:18px;color:var(--dim);font-size:15.5px;}
+  .band ul li{margin-bottom:7px;}
+  .band.done ul{color:var(--text);}
+
+  footer{padding:56px 0 70px;color:var(--dim);font-size:14.5px;}
+  footer .rows{display:flex;gap:28px;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;}
+  footer a{text-decoration:none;}
+  .limits{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);
+    border-radius:12px;padding:22px 24px;margin-top:30px;}
+  .limits p{margin:0;color:var(--dim);font-size:16px;}
+  .limits b{color:var(--text);}
+
+  @media (max-width:920px){
+    .grid3,.roadmap,.statline{grid-template-columns:1fr 1fr;}
+    .grid2,.play{grid-template-columns:1fr;}
+    ul.gaps{grid-template-columns:1fr;}
+    nav ul{display:none;}
+  }
+  @media (max-width:560px){ .grid3,.roadmap,.statline{grid-template-columns:1fr;} }
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+</style>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">DIGITAL TWIN <span>GENESIS</span></span>
+    <ul>
+      <li><a href="#problem">Problem</a></li>
+      <li><a href="#tool">The tool</a></li>
+      <li><a href="#try">Try it</a></li>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#evidence">Evidence</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+    </ul>
+    <a class="cta" href="#try">TRY THE MINI TWIN</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <div class="wrap hero-inner">
+    <p class="kicker">Digital twin · traffic signal control</p>
+    <h1>Rehearsal before the road</h1>
+    <p class="lede">
+      Cities change signal timings on live traffic because there is nowhere else to try them.
+      This is a twin of the junction where you can — change the timings, change the traffic,
+      break it on purpose, and see what every decision costs.
+    </p>
+    <div class="hero-actions">
+      <a class="btn primary" href="#try">Try the mini twin</a>
+      <a class="btn" href="#how">How it works</a>
+      <a class="btn" href="#evidence">See the numbers</a>
+    </div>
+  </div>
+  <div class="wrap hero-note">
+    The background is not a video — it is a running simulation. Vehicles stop at red.
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <p class="eyebrow warn">The problem</p>
+    <h2>Today, the road is the test environment</h2>
+    <p class="body">
+      To improve a junction, an engineer changes the timing on the real signal and watches real
+      traffic. There is no rehearsal. If the change is wrong, <strong>the queue is real and the
+      people sitting in it are real</strong> — and nothing records what was tried.
+    </p>
+    <p class="body">
+      Adaptive traffic control already exists and works. Bengaluru runs B-ATCS on CoSiCoSt across
+      roughly 165 junctions, with about a third less travel time reported at Hudson Circle;
+      Pittsburgh's Surtrac cut travel time by a quarter. We are not competing with any of it.
+      We built the thing that should sit next to it.
+    </p>
+
+    <div class="statline">
+      <div><div class="n">165</div><div class="k">junctions on adaptive control in Bengaluru</div></div>
+      <div><div class="n">−33%</div><div class="k">travel time reported at Hudson Circle</div></div>
+      <div><div class="n">−25%</div><div class="k">travel time, Surtrac Pittsburgh pilot</div></div>
+      <div class="warn"><div class="n">0</div><div class="k">of them let an operator rehearse a bad day</div></div>
+    </div>
+
+    <ul class="gaps">
+      <li><b>01</b><span>City-wide sensors cost a fortune<small>the barrier to adopting adaptive control at all</small></span></li>
+      <li><b>02</b><span>One blocked camera degrades the junction<small>until somebody repairs it</small></span></li>
+      <li><b>03</b><span>Switching plans wastes time<small>especially against legacy controllers</small></span></li>
+      <li><b>04</b><span>Rare events are what models never saw<small>accidents, closures, manual diversions</small></span></li>
+      <li><b>05</b><span>Mixed traffic breaks queue estimation<small>two-wheelers and autos, no lane discipline</small></span></li>
+    </ul>
+  </div>
+</section>
+
+<section id="tool">
+  <div class="wrap">
+    <p class="eyebrow">What it does</p>
+    <h2>Preview, reason, receipt</h2>
+    <p class="body">
+      Three things adaptive control does not give the person responsible for the junction.
+    </p>
+    <div class="grid3">
+      <div class="card">
+        <p class="tag">PREVIEW</p>
+        <h3>Try it before the street does</h3>
+        <p>Drag a green longer and watch queues respond. Then test the plan against identical
+        replayed traffic — same vehicles, same arrival times — so a better score is a better plan,
+        not a luckier minute.</p>
+      </div>
+      <div class="card">
+        <p class="tag">REASON</p>
+        <h3>Every change says why</h3>
+        <p>Automatic decisions carry one sentence citing the actual queue numbers, drawn beside the
+        junction. Explainability is the documented number-one barrier to deploying learned control
+        in real agencies.</p>
+      </div>
+      <div class="card">
+        <p class="tag">RECEIPT</p>
+        <h3>Priority has a price</h3>
+        <p>Grant an emergency corridor and the ledger shows both sides: seconds saved for that
+        vehicle, vehicle-seconds paid by cross traffic. Over budget, the request is refused —
+        and it says which budget.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="try">
+  <div class="wrap">
+    <p class="eyebrow">Try it</p>
+    <h2>One junction. Two sliders. Find a better timing.</h2>
+    <p class="body">
+      A miniature of the real tool, running in this page. Change how long each direction stays
+      green and watch the queues and the average delay respond. The scale beside the number is
+      <strong>level of service</strong> — the yardstick traffic engineers actually use.
+    </p>
+
+    <div class="play">
+      <div>
+        <canvas id="mini" width="760" height="440" aria-label="A single junction with queues on four approaches responding to the green times you set."></canvas>
+        <p class="hint" style="margin-top:14px">
+          Simplified preview: queue-and-discharge model at 1,800 vehicles per hour of saturation
+          flow. The full app models every vehicle individually.
+        </p>
+      </div>
+      <div class="ctl">
+        <label>
+          <span class="lbl">NORTH–SOUTH GREEN <b id="ns-out">18s</b></span>
+          <input id="ns" type="range" min="5" max="60" step="1" value="18">
+        </label>
+        <label>
+          <span class="lbl">EAST–WEST GREEN <b id="ew-out">18s</b></span>
+          <input id="ew" type="range" min="5" max="60" step="1" value="18">
+        </label>
+        <label>
+          <span class="lbl">TRAFFIC — NORTH–SOUTH <b id="dns-out">600/h</b></span>
+          <input id="dns" type="range" min="100" max="1400" step="50" value="600">
+        </label>
+        <label>
+          <span class="lbl">TRAFFIC — EAST–WEST <b id="dew-out">600/h</b></span>
+          <input id="dew" type="range" min="100" max="1400" step="50" value="600">
+        </label>
+
+        <div class="readout">
+          <div>
+            <div class="n" id="delay">—</div>
+            <div class="k">AVG DELAY / VEHICLE <span class="los" id="los">—</span></div>
+          </div>
+          <div>
+            <div class="n" id="queue">0</div>
+            <div class="k">VEHICLES WAITING</div>
+          </div>
+        </div>
+        <p class="best">Best you have found: <span id="best">—</span> · cycle <span id="cycle">40s</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <p class="eyebrow">How it works</p>
+    <h2>A junction is a scheduler</h2>
+    <p class="body">
+      The four approaches are processes, green time is the CPU, a fixed plan is round robin,
+      maximum green is starvation prevention, and an emergency corridor is preemption. Every
+      controller — fixed, classical, or a language model — writes through
+      <strong>one function</strong>, and the safety limits sit underneath it. That is why no model
+      output can starve an approach or skip a yellow.
+    </p>
+
+    <div class="arch">
+      <svg viewBox="0 0 900 300" role="img" aria-label="Sensor layer feeds the simulation core; four controllers pass through one hard-coded safety layer; the core feeds the display; offline Python tools supply files.">
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="fdg" points="0,0 10,5 0,10"/></marker>
+        </defs>
+        <rect x="0" y="8" width="270" height="52" rx="7" fill="none" stroke-width="1.6" class="sl" stroke-dasharray="6 5"/>
+        <text x="135" y="32" class="ft" text-anchor="middle">Sensor layer</text>
+        <text x="135" y="50" class="m fd" text-anchor="middle">mocked · swap here for real detectors</text>
+
+        <rect x="0" y="106" width="390" height="80" rx="7" fill="none" stroke-width="2.4" class="sa"/>
+        <text x="195" y="138" class="b ft" text-anchor="middle">Simulation core</text>
+        <text x="195" y="162" class="m fd" text-anchor="middle">vehicle physics · signal state machines · queues</text>
+        <path d="M 135 64 L 135 100" class="ar" marker-end="url(#ar1)"/>
+
+        <rect x="520" y="8" width="380" height="74" rx="7" fill="none" stroke-width="1.6" class="sl"/>
+        <text x="710" y="32" class="ft" text-anchor="middle">Controllers</text>
+        <g class="m ft" text-anchor="middle">
+          <rect x="540" y="44" width="80" height="26" rx="4" class="bs2"/><text x="580" y="61">Fixed</text>
+          <rect x="630" y="44" width="80" height="26" rx="4" class="bs2"/><text x="670" y="61">Webster</text>
+          <rect x="720" y="44" width="98" height="26" rx="4" class="bs2"/><text x="769" y="61">Max-Pressure</text>
+          <rect x="828" y="44" width="54" height="26" rx="4" class="bs2"/><text x="855" y="61">AI</text>
+        </g>
+
+        <rect x="520" y="112" width="380" height="66" rx="7" fill="none" stroke-width="2.6" class="sd"/>
+        <text x="710" y="140" class="b fdg" text-anchor="middle">Safety layer — hard-coded, never learned</text>
+        <text x="710" y="163" class="m fd" text-anchor="middle">min green 5s · max green 60s · yellow never skipped</text>
+        <path d="M 710 86 L 710 106" class="ar sd" marker-end="url(#ar2)"/>
+        <path d="M 514 145 L 398 145" class="ar sd" marker-end="url(#ar2)"/>
+
+        <rect x="0" y="228" width="390" height="56" rx="7" fill="none" stroke-width="1.6" class="sl"/>
+        <text x="195" y="252" class="ft" text-anchor="middle">Display</text>
+        <text x="195" y="272" class="m fd" text-anchor="middle">the only files that draw</text>
+        <path d="M 195 190 L 195 222" class="ar" marker-end="url(#ar1)"/>
+
+        <rect x="520" y="214" width="380" height="70" rx="7" fill="none" stroke-width="1.6" class="sl" stroke-dasharray="6 5"/>
+        <text x="710" y="240" class="ft" text-anchor="middle">Offline tools — Python</text>
+        <text x="710" y="262" class="m fd" text-anchor="middle">SUMO validation · training · map import</text>
+        <path d="M 514 250 L 398 250" class="ar" marker-end="url(#ar1)" stroke-dasharray="5 5"/>
+      </svg>
+    </div>
+
+    <table class="spec">
+      <tr><th>What</th><th>How it is modelled</th></tr>
+      <tr><td class="k">Vehicle motion</td><td class="v">Gap-based car following under finite acceleration — 40 km/h free flow, 1.5 m/s² acceleration, 3 m/s² braking, 2 m standstill gap, 2 s following headway</td></tr>
+      <tr><td class="k">Traffic mix</td><td class="v">Two-wheeler 0.25 PCU · auto-rickshaw 0.5 · car 1.0 · truck 2.2 · bus 3.0, each with its own length, speed and weight class</td></tr>
+      <tr><td class="k">Signals</td><td class="v">Opposing approaches as phase pairs, green → yellow → all-red, with minimum and maximum green enforced in the state machine itself</td></tr>
+      <tr><td class="k">Start-up lost time</td><td class="v">2 seconds before a stopped queue moves — without it, capacity is overstated</td></tr>
+      <tr><td class="k">Classical control</td><td class="v">Webster's 1958 minimum-delay cycle from measured PCU flows, and Max-Pressure — the standard baseline in the research literature</td></tr>
+      <tr><td class="k">Measurement</td><td class="v">Control delay per vehicle, the measure used for level of service — not the smaller stopped-delay figure</td></tr>
+      <tr><td class="k">Repeatability</td><td class="v">All arrivals from one seeded generator, so two plans can be compared on identical traffic</td></tr>
+    </table>
+  </div>
+</section>
+
+<section id="evidence">
+  <div class="wrap">
+    <p class="eyebrow">Evidence</p>
+    <h2>Same junction, same traffic, only the plan changed</h2>
+    <div class="grid2">
+      <div>
+        <p class="body">
+          A balanced plan gives about <strong>16.7 seconds</strong> of average control delay per
+          vehicle. Deliberately skew the same junction on the same seed and it becomes
+          <strong>21.0 seconds</strong> — the tool demonstrating its own premise.
+        </p>
+        <p class="body">
+          Granting a priority corridor was measured too: the priority vehicle saved
+          <strong>2.9 seconds</strong> against the 6.3 seconds ordinary vehicles were losing in the
+          same window, while cross traffic paid <strong>334 vehicle-seconds</strong>. Under light
+          traffic priority is a bad trade — and the tool says so rather than flattering itself.
+        </p>
+      </div>
+      <div class="arch" style="margin-top:0">
+        <svg viewBox="0 0 620 240" role="img" aria-label="Bar chart: balanced plan 16.7 seconds, skewed plan 21.0 seconds, shown against level of service bands.">
+          <rect x="150" y="14" width="100" height="150" fill="var(--good-soft)"/>
+          <rect x="250" y="14" width="150" height="150" fill="var(--accent-soft)"/>
+          <rect x="400" y="14" width="200" height="150" fill="var(--warn-soft)"/>
+          <text x="200" y="8" class="m" fill="var(--good)" text-anchor="middle">LOS B</text>
+          <text x="325" y="8" class="m fa" text-anchor="middle">LOS C</text>
+          <text x="500" y="8" class="m" fill="var(--warn)" text-anchor="middle">LOS D</text>
+          <line x1="150" y1="164" x2="600" y2="164" class="sl" stroke-width="1.5"/>
+          <g class="m fd" text-anchor="middle">
+            <text x="150" y="184">0</text><text x="250" y="184">10</text><text x="350" y="184">20</text>
+            <text x="450" y="184">30</text><text x="550" y="184">40</text>
+            <text x="375" y="212">average delay per vehicle (seconds)</text>
+          </g>
+          <rect x="150" y="32" width="167" height="34" rx="3" fill="var(--good)"/>
+          <text x="325" y="55" class="m" fill="var(--good)">16.7s balanced 18/18</text>
+          <rect x="150" y="90" width="210" height="34" rx="3" fill="var(--warn)"/>
+          <text x="368" y="113" class="m" fill="var(--warn)">21.0s skewed 25/8</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="limits">
+      <p><b>What this does not do.</b> No route choice, no turning movements, no pedestrians, no
+      lane changing, and it has not been validated against field data. The sensor feed is mocked at
+      one documented function. Every limitation is written down in the model specification rather
+      than left to be discovered.</p>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap">
+  <div class="wrap">
+    <p class="eyebrow">Roadmap</p>
+    <h2>What runs today, and what comes next</h2>
+    <div class="roadmap">
+      <div class="band done">
+        <h3>Done</h3>
+        <ul>
+          <li>Timing control and seeded A/B testing</li>
+          <li>Five vehicle types with PCU weighting</li>
+          <li>Accident, flood, surge, signal failure</li>
+          <li>Priority corridor with a cost ledger</li>
+          <li>Full model specification</li>
+        </ul>
+      </div>
+      <div class="band next">
+        <h3>Next</h3>
+        <ul>
+          <li>Many priority requests competing at once</li>
+          <li>Green-wave coordination between junctions</li>
+          <li>A real junction imported from OpenStreetMap</li>
+          <li>Cross-validation against SUMO</li>
+        </ul>
+      </div>
+      <div class="band later">
+        <h3>Later</h3>
+        <ul>
+          <li>Quantum-ready phase selection (QUBO)</li>
+          <li>Learned controller trained offline</li>
+          <li>3D view — the renderer is already separable</li>
+          <li>Export for planners</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap rows">
+    <div>
+      <p style="margin:0 0 6px"><span class="brand">DIGITAL TWIN <span>GENESIS</span></span></p>
+      <p style="margin:0">A rehearsal space for signal timing decisions.</p>
+    </div>
+    <div style="font-family:var(--mono);font-size:13.5px">
+      Vanilla JavaScript · p5.js · no build step · runs from a file
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================ 3D backdrop
+   Not decoration: a small live simulation. Vehicles run the grid and stop at
+   red, using the same phase-pair logic as the real twin. */
+(function () {
+  var canvas = document.getElementById('bg');
+  var host = canvas.parentElement;
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (typeof THREE === 'undefined') { canvas.style.display = 'none'; return; }
+
+  var W = host.clientWidth, H = Math.max(host.clientHeight, 560);
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
+  renderer.setSize(W, H, false);
+  renderer.setClearColor(0x060910, 1);
+
+  var scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x060910, 60, 190);
+
+  var camera = new THREE.PerspectiveCamera(46, W / H, 0.1, 400);
+  camera.position.set(52, 44, 62);
+  camera.lookAt(0, 0, 0);
+
+  scene.add(new THREE.AmbientLight(0x33506a, 1.1));
+  var key = new THREE.DirectionalLight(0x9fd8e8, 0.55);
+  key.position.set(30, 60, 20);
+  scene.add(key);
+
+  /* --- road grid --- */
+  var AX = [-45, -15, 15, 45];          // road centre lines on both axes
+  var ROAD_W = 6.4, SPAN = 130;
+  var roadMat = new THREE.MeshStandardMaterial({ color: 0x131d29, roughness: 1, metalness: 0 });
+  AX.forEach(function (v) {
+    var h = new THREE.Mesh(new THREE.BoxGeometry(SPAN, 0.35, ROAD_W), roadMat);
+    h.position.set(0, 0, v); scene.add(h);
+    var g = new THREE.Mesh(new THREE.BoxGeometry(ROAD_W, 0.35, SPAN), roadMat);
+    g.position.set(v, 0, 0); scene.add(g);
+  });
+
+  var grid = new THREE.GridHelper(160, 32, 0x1d3a48, 0x122430);
+  grid.position.y = -0.32;
+  grid.material.opacity = 0.5; grid.material.transparent = true;
+  scene.add(grid);
+
+  /* --- blocks between the roads, for depth --- */
+  var blockMat = new THREE.MeshStandardMaterial({ color: 0x0d151f, roughness: .95, metalness: .05 });
+  var centres = [-60, -30, 0, 30, 60];
+  for (var a = 0; a < centres.length; a++) {
+    for (var b = 0; b < centres.length; b++) {
+      if (Math.random() < 0.28) continue;
+      var hgt = 2 + Math.random() * 12;
+      var m = new THREE.Mesh(new THREE.BoxGeometry(14 + Math.random() * 6, hgt, 14 + Math.random() * 6), blockMat);
+      m.position.set(centres[a] + (Math.random() - .5) * 4, hgt / 2, centres[b] + (Math.random() - .5) * 4);
+      scene.add(m);
+    }
+  }
+
+  /* --- signals: one phase pair per junction, offset so a wave runs the grid --- */
+  var junctions = [];
+  var lampGeo = new THREE.SphereGeometry(0.85, 10, 10);
+  for (var i = 0; i < AX.length; i++) {
+    for (var j = 0; j < AX.length; j++) {
+      var jn = { x: AX[i], z: AX[j], offset: (i + j) * 2.1, phase: 'NS' };
+      jn.lamp = new THREE.Mesh(lampGeo, new THREE.MeshBasicMaterial({ color: 0x34d399 }));
+      jn.lamp.position.set(AX[i], 3.2, AX[j]);
+      scene.add(jn.lamp);
+      junctions.push(jn);
+    }
+  }
+  var CYCLE = 9.0;
+  function phaseAt(jn, t) { return (((t + jn.offset) % CYCLE) < CYCLE / 2) ? 'NS' : 'EW'; }
+
+  /* --- vehicles --- */
+  var COUNT = 150;
+  var carGeo = new THREE.BoxGeometry(2.4, 0.75, 1.15);
+  var carMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+  var cars = new THREE.InstancedMesh(carGeo, carMat, COUNT);
+  cars.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(cars);
+
+  var LIMIT = SPAN / 2;
+  var agents = [];
+  for (var c = 0; c < COUNT; c++) {
+    var horiz = Math.random() < 0.5;
+    var lane = AX[(Math.random() * AX.length) | 0];
+    var dir = Math.random() < 0.5 ? 1 : -1;
+    agents.push({
+      horiz: horiz, lane: lane, dir: dir,
+      pos: (Math.random() * 2 - 1) * LIMIT,
+      speed: 0, top: 11 + Math.random() * 5
+    });
+  }
+
+  var dummy = new THREE.Object3D();
+  var LANE_OFF = 1.6;
+
+  function stopDistance(a, t) {
+    // distance to the next junction on this vehicle's path that is not green
+    var best = Infinity;
+    for (var k = 0; k < junctions.length; k++) {
+      var jn = junctions[k];
+      var onPath = a.horiz ? (jn.z === a.lane) : (jn.x === a.lane);
+      if (!onPath) continue;
+      var centre = a.horiz ? jn.x : jn.z;
+      var d = (centre - a.pos) * a.dir - 4.2;
+      if (d < -1) continue;
+      var serves = a.horiz ? 'EW' : 'NS';
+      if (phaseAt(jn, t) === serves) continue;
+      if (d < best) best = d;
+    }
+    return best;
+  }
+
+  function step(dt, t) {
+    for (var k = 0; k < agents.length; k++) {
+      var a = agents[k];
+      var gap = stopDistance(a, t);
+      var target = a.top * Math.max(0, Math.min(1, (gap - 1.5) / 12));
+      if (target > a.speed) a.speed = Math.min(target, a.speed + 9 * dt);
+      else a.speed = Math.max(target, a.speed - 22 * dt);
+      a.pos += a.speed * a.dir * dt;
+      if (a.pos > LIMIT) a.pos = -LIMIT;
+      if (a.pos < -LIMIT) a.pos = LIMIT;
+
+      if (a.horiz) {
+        dummy.position.set(a.pos, 0.62, a.lane + LANE_OFF * a.dir);
+        dummy.rotation.set(0, 0, 0);
+      } else {
+        dummy.position.set(a.lane - LANE_OFF * a.dir, 0.62, a.pos);
+        dummy.rotation.set(0, Math.PI / 2, 0);
+      }
+      dummy.updateMatrix();
+      cars.setMatrixAt(k, dummy.matrix);
+    }
+    cars.instanceMatrix.needsUpdate = true;
+
+    for (var m = 0; m < junctions.length; m++) {
+      var jn = junctions[m];
+      jn.lamp.material.color.setHex(phaseAt(jn, t) === 'NS' ? 0x34d399 : 0xf87171);
+    }
+  }
+
+  var mx = 0, my = 0, tx = 0, ty = 0;
+  window.addEventListener('pointermove', function (e) {
+    tx = (e.clientX / window.innerWidth - 0.5);
+    ty = (e.clientY / window.innerHeight - 0.5);
+  });
+
+  function resize() {
+    W = host.clientWidth; H = Math.max(host.clientHeight, 560);
+    camera.aspect = W / H; camera.updateProjectionMatrix();
+    renderer.setSize(W, H, false);
+  }
+  window.addEventListener('resize', resize);
+
+  var last = performance.now(), clock = 0;
+  function frame(now) {
+    var dt = Math.min((now - last) / 1000, 0.05); last = now;
+    clock += dt;
+    mx += (tx - mx) * 0.05; my += (ty - my) * 0.05;
+    camera.position.x = 52 + Math.sin(clock * 0.06) * 8 - mx * 14;
+    camera.position.z = 62 + Math.cos(clock * 0.05) * 8;
+    camera.position.y = 44 + my * 8;
+    camera.lookAt(0, 0, 0);
+    step(dt, clock);
+    renderer.render(scene, camera);
+    if (!reduced) requestAnimationFrame(frame);
+  }
+  step(0.016, 0);
+  renderer.render(scene, camera);
+  if (!reduced) requestAnimationFrame(frame);
+})();
+
+/* ============================================================ mini twin
+   Queue-and-discharge model of one junction: arrivals per approach, discharge
+   at saturation flow while that phase is green. Simplified on purpose. */
+(function () {
+  var cv = document.getElementById('mini');
+  var ctx = cv.getContext('2d');
+  var ns = document.getElementById('ns'), ew = document.getElementById('ew');
+  var dns = document.getElementById('dns'), dew = document.getElementById('dew');
+  var out = {
+    ns: document.getElementById('ns-out'), ew: document.getElementById('ew-out'),
+    dns: document.getElementById('dns-out'), dew: document.getElementById('dew-out'),
+    delay: document.getElementById('delay'), queue: document.getElementById('queue'),
+    los: document.getElementById('los'), best: document.getElementById('best'),
+    cycle: document.getElementById('cycle')
+  };
+
+  var YELLOW = 3, ALLRED = 1, SAT = 1800 / 3600;   // vehicles per second per approach
+  var state = { phase: 'NS', mode: 'green', timer: 18, q: { N: 0, S: 0, E: 0, W: 0 },
+                served: 0, delay: 0, t: 0 };
+  var best = null, settleAt = 0;
+
+  function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function greenFor(p) { return p === 'NS' ? +ns.value : +ew.value; }
+
+  function reset() {
+    state = { phase: 'NS', mode: 'green', timer: greenFor('NS'), q: { N: 0, S: 0, E: 0, W: 0 },
+              served: 0, delay: 0, t: 0 };
+    settleAt = 0;
+  }
+
+  [ns, ew, dns, dew].forEach(function (el) {
+    el.addEventListener('input', function () {
+      out.ns.textContent = ns.value + 's';
+      out.ew.textContent = ew.value + 's';
+      out.dns.textContent = dns.value + '/h';
+      out.dew.textContent = dew.value + '/h';
+      out.cycle.textContent = (+ns.value + +ew.value + 2 * (YELLOW + ALLRED)) + 's';
+      reset();
+    });
+  });
+
+  function step(dt) {
+    state.t += dt;
+
+    // signal
+    state.timer -= dt;
+    if (state.timer <= 0) {
+      if (state.mode === 'green') { state.mode = 'yellow'; state.timer = YELLOW; }
+      else if (state.mode === 'yellow') { state.mode = 'allred'; state.timer = ALLRED; }
+      else {
+        state.phase = state.phase === 'NS' ? 'EW' : 'NS';
+        state.mode = 'green';
+        state.timer = greenFor(state.phase);
+      }
+    }
+
+    // arrivals, split evenly between the two approaches of each axis
+    var rNS = (+dns.value / 3600) / 2, rEW = (+dew.value / 3600) / 2;
+    state.q.N += rNS * dt; state.q.S += rNS * dt;
+    state.q.E += rEW * dt; state.q.W += rEW * dt;
+
+    // discharge on green only
+    if (state.mode === 'green') {
+      var dirs = state.phase === 'NS' ? ['N', 'S'] : ['E', 'W'];
+      for (var i = 0; i < dirs.length; i++) {
+        var d = dirs[i];
+        var out_ = Math.min(state.q[d], SAT * dt);
+        state.q[d] -= out_;
+        state.served += out_;
+      }
+    }
+
+    // delay accumulates as queued vehicle-seconds
+    var total = state.q.N + state.q.S + state.q.E + state.q.W;
+    state.delay += total * dt;
+    return total;
+  }
+
+  function losFor(d) {
+    if (d <= 10) return ['A', css('--good')];
+    if (d <= 20) return ['B', css('--good')];
+    if (d <= 35) return ['C', css('--accent')];
+    if (d <= 55) return ['D', css('--warn')];
+    if (d <= 80) return ['E', css('--warn')];
+    return ['F', css('--danger')];
+  }
+
+  function drawArm(cx, cy, dir, q, green) {
+    var lit = green ? css('--good') : css('--danger');
+    ctx.fillStyle = lit;
+    var lx = cx + dir.x * 58, ly = cy + dir.y * 58;
+    ctx.beginPath(); ctx.arc(lx - dir.y * 26, ly + dir.x * 26, 7, 0, Math.PI * 2); ctx.fill();
+
+    var n = Math.min(Math.round(q), 26);
+    for (var i = 0; i < n; i++) {
+      var d = 64 + i * 18;
+      var x = cx + dir.x * d - dir.y * 12;
+      var y = cy + dir.y * d + dir.x * 12;
+      ctx.fillStyle = i < 3 ? css('--accent') : css('--accent-soft');
+      ctx.strokeStyle = css('--accent');
+      ctx.lineWidth = 1;
+      var w = dir.x !== 0 ? 13 : 8, h = dir.x !== 0 ? 8 : 13;
+      ctx.fillRect(x - w / 2, y - h / 2, w, h);
+      ctx.strokeRect(x - w / 2, y - h / 2, w, h);
+    }
+  }
+
+  function draw() {
+    var w = cv.width, h = cv.height, cx = w / 2, cy = h / 2;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#0A0F17'; ctx.fillRect(0, 0, w, h);
+
+    ctx.fillStyle = css('--surface2');
+    ctx.fillRect(0, cy - 34, w, 68);
+    ctx.fillRect(cx - 34, 0, 68, h);
+    ctx.fillStyle = css('--surface');
+    ctx.fillRect(cx - 40, cy - 40, 80, 80);
+
+    var greenNS = state.phase === 'NS' && state.mode === 'green';
+    var greenEW = state.phase === 'EW' && state.mode === 'green';
+    drawArm(cx, cy, { x: 0, y: -1 }, state.q.N, greenNS);
+    drawArm(cx, cy, { x: 0, y: 1 }, state.q.S, greenNS);
+    drawArm(cx, cy, { x: 1, y: 0 }, state.q.E, greenEW);
+    drawArm(cx, cy, { x: -1, y: 0 }, state.q.W, greenEW);
+
+    ctx.fillStyle = css('--dim');
+    ctx.font = '12px IBM Plex Mono, monospace';
+    ctx.fillText('N', cx - 4, 18);
+    ctx.fillText('S', cx - 4, h - 8);
+    ctx.fillText('E', w - 16, cy + 4);
+    ctx.fillText('W', 6, cy + 4);
+    ctx.fillText(state.phase + ' ' + state.mode.toUpperCase(), 12, 20);
+  }
+
+  var last = performance.now();
+  function loop(now) {
+    var dt = Math.min((now - last) / 1000, 0.05) * 4;   // 4x so results settle quickly
+    last = now;
+    var total = step(dt);
+    draw();
+
+    if (state.served > 40) {
+      var avg = state.delay / state.served;
+      out.delay.textContent = avg.toFixed(1) + 's';
+      var l = losFor(avg);
+      out.los.textContent = 'LOS ' + l[0];
+      out.los.style.color = l[1];
+      out.los.style.background = 'rgba(255,255,255,.06)';
+      if (state.t > 90) {
+        if (best === null || avg < best) { best = avg; }
+        out.best.textContent = best.toFixed(1) + 's';
+      }
+    }
+    out.queue.textContent = Math.round(total);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
