@@ -118,12 +118,25 @@ biased 2× toward one axis:
 > "The ambulance never stopped once. Travel time down 32%, and everyone else
 > paid 3%."
 
+**Real Vijayawada map** — 1.71 km trip crossing 19 signalised junctions,
+imported from OpenStreetMap:
+
+| | Ambulance waiting | Ambulance trip |
+| --- | --- | --- |
+| Signals ignore it | 160 s | 369 s |
+| Green corridor | **0 s** | **177 s — 192 s saved, 52% faster** |
+
+> "That is a real Vijayawada road network. The geometry is from OpenStreetMap.
+> The signal placement is inferred, because the map does not record it — and
+> that gap is itself worth knowing about."
+
 **Verification:** 21 simulation assertions, 25 browser checks, both green.
 
 ```bash
 node tests/run.js                      # 21 passed
 node tools/browser-check/check.js      # 25 passed, real headless Chromium
 python sumo/benchmark.py --scenarios 5 # the SUMO table
+python sumo/city_corridor.py           # the real Vijayawada corridor
 ```
 
 ---

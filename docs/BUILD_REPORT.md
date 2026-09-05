@@ -82,6 +82,22 @@ held-out scenarios, one ambulance each:
 The ambulance never stopped once. See `sumo/README.md`, which also teaches the
 neural network from `xor_test.py` upward.
 
+### The real map — `sumo/build_city.py`, `sumo/city_corridor.py`
+
+OpenStreetMap data pulled through the Overpass API and compiled by netconvert,
+with no browser step, so it is reproducible. A 1.71 km trip across the Benz
+Circle area, crossing 19 signalised junctions:
+
+| | Ambulance waiting | Ambulance trip | Everyone else |
+| --- | --- | --- | --- |
+| Signals ignore it | 160 s | 369 s | 120,975 veh-s |
+| **Green corridor** | **0 s** | **177 s** | 119,135 veh-s |
+
+192 seconds saved, 52% faster, and ordinary traffic marginally better rather
+than worse. A finding worth stating: OpenStreetMap has **two** tagged traffic
+signals across 516 km of Vijayawada road, so signal placement is inferred from
+junction size. Real geometry, inferred signals.
+
 ### Browser verification — `tools/browser-check/`
 
 `node tools/browser-check/check.js --shots` opens both pages in headless

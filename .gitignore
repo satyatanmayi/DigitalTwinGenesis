@@ -16,3 +16,6 @@ sumo/net/trip_test.xml
 
 # browser-check
 tools/browser-check/node_modules/
+sumo/city/*.osm.xml
+sumo/city/*.trips.xml
+sumo/city/corridor.rou.xml

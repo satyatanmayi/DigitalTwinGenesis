@@ -48,6 +48,39 @@ choice buys.
 
 ---
 
+## A green corridor across the real Vijayawada map
+
+`build_city.py` downloads OpenStreetMap data through the Overpass API and
+compiles it with netconvert - no browser, no clicking, one command. Then
+`city_corridor.py` picks a home and a hospital, routes between them, and runs
+the same traffic twice: once with the signals ignoring the ambulance, once
+holding each junction green as it approaches.
+
+```bash
+python sumo/build_city.py --place benz      # 141 km of real road, 245 junctions
+python sumo/city_corridor.py                # the comparison
+python sumo/city_corridor.py --gui          # watch it
+```
+
+A 1.71 km trip crossing **19 signalised junctions**:
+
+| | Ambulance waiting | Ambulance trip | Everyone else |
+| --- | --- | --- | --- |
+| Signals ignore it | 160 s | 369 s | 120,975 veh-s |
+| **Green corridor** | **0 s** | **177 s** | 119,135 veh-s |
+
+**192 seconds saved on a 1.7 km trip - 52% faster.** 19 junction preemptions.
+
+Two honest notes to make out loud:
+
+- Ordinary traffic came out *slightly better* here, not worse. Clearing the
+  ambulance quickly stops it blocking a lane while it waits. The difference is
+  1.5%, which is small enough to call noise rather than a benefit.
+- **The signal placement is inferred, not real.** OpenStreetMap has only two
+  tagged traffic signals across 516 km of Vijayawada road, so netconvert infers
+  them from junction size. The geometry is real; where the signals are is an
+  assumption. Say that before someone asks.
+
 ## Learning the neural network part
 
 Do these in order. The first one takes ten minutes and everything after it is
