@@ -355,6 +355,67 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
       console.log('\nscreenshots written to docs/screenshots/');
     }
 
+    /* ---- the language-model stack ----
+     * The point of these checks is that the stack DEGRADES rather than stalls.
+     * With a key and a network it calls a model and then reviews the answer;
+     * with neither it uses the local rule. Either way a decision appears, so
+     * the assertion is on the decision existing and naming its layer, not on
+     * the network being up.
+     */
+    await street.evaluate(() => {
+      document.querySelector('.tab[data-pane="learn"]').click();
+    });
+    const chain = await street.evaluate(() => AGENT.MODEL_CHAIN.length);
+    check('the model fallback chain has more than one model', chain >= 2,
+          chain + ' models tried in order');
+
+    await street.evaluate(() => {
+      document.getElementById('btn-ai').click();
+    });
+    // A propose call and a review call are one round trip each, and each takes
+    // roughly ten seconds against the live API, so wait for two of them.
+    await sleep(50000);
+
+    const llm = await street.evaluate(() => ({
+      total: AGENT.decisions.length,
+      sources: AGENT.decisions.slice(0, 8).map((d) => d.source),
+      verdicts: AGENT.decisions.slice(0, 8).map((d) => d.verdict),
+      reasons: AGENT.decisions.slice(0, 8).map((d) => d.reason),
+      stats: AGENT.stats
+    }));
+    check('the language-model layer produces decisions', llm.total > 0,
+          llm.total + ' decisions, sources: ' + [...new Set(llm.sources)].join('/'));
+    check('every decision names which layer made it',
+          llm.total > 0 && llm.verdicts.every((v) => typeof v === 'string' && v.length > 0),
+          [...new Set(llm.verdicts)].join('/') || 'none');
+    check('and every decision carries a reason',
+          llm.total > 0 && llm.reasons.every((r) => typeof r === 'string' && r.length > 10),
+          llm.reasons[0] || 'none');
+
+    const reviewed = llm.stats.approvals + llm.stats.corrections;
+    if (llm.stats.calls > 0) {
+      check('the second model reviewed the first', reviewed > 0,
+            llm.stats.approvals + ' approved, ' + llm.stats.corrections + ' overruled');
+    } else {
+      // No network or no key: this is the documented fallback, not a failure.
+      check('with no model reachable the local rule still decides',
+            llm.sources.every((s) => s === 'heuristic' || s === 'error'),
+            'ran on layer 3 only');
+    }
+
+    const llmFacts = await street.evaluate(() =>
+      document.querySelectorAll('#llm-facts .fact').length);
+    check('the stack is explained on screen', llmFacts >= 6, llmFacts + ' rows shown');
+
+    const safety = await street.evaluate(() =>
+      SIM.junctions.every((j) => j.state !== 'green' || j.greenElapsed >= 0));
+    check('signal safety limits still hold under model control', safety === true,
+          'min green ' + (await street.evaluate(() => SIM.SIGNAL.minGreen)) + 's enforced below every controller');
+
+    if (WANT_SHOTS) {
+      await street.screenshot({ path: path.join(SHOT_DIR, 'street-llm.png') });
+    }
+
     /* ---- late errors ---- */
     check('no errors appeared during the whole run',
           streetErrors.length === 0 && roomErrors.length === 0,

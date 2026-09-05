@@ -216,6 +216,15 @@
           limits underneath it. Nothing here can starve an approach or skip a yellow.</p>
       </section>
 
+      <section class="panel" id="llm-panel">
+        <h2>THE LANGUAGE-MODEL STACK</h2>
+        <p class="hint">One model proposes an action and a reason. A second call reviews it
+          against the same numbers and may overrule it. If both fail, a local rule decides
+          and says so. The signal safety limits sit under all three.</p>
+        <div id="llm-facts" class="factlist"></div>
+        <div id="llm-last"></div>
+      </section>
+
       <section class="panel" id="model-panel">
         <h2>THE TRAINED MODEL</h2>
         <div id="model-facts" class="factlist"></div>

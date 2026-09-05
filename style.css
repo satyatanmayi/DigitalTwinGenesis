@@ -215,7 +215,7 @@ body { display: grid; grid-template-columns: 70fr 30fr; }
 .dec.heuristic, .dec.plan { border-left-color: var(--text-dim); }
 .dec.maxpressure { border-left-color: var(--accent-2); }
 .dec.error, .dec.refused { border-left-color: var(--red); }
-.dec.incident { border-left-color: var(--warn); }
+.dec.incident, .dec.warn { border-left-color: var(--warn); }
 .dec.granted, .dec.ledger { border-left-color: var(--green); }
 
 .dec-head { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; font-family: var(--mono); font-size: 11.5px; }
@@ -354,3 +354,6 @@ body { display: block; }
   .tabs { margin-left: 8px; }
   #topbar .brand-sub { display: none; }
 }
+
+#llm-last { margin-top: 8px; }
+#llm-last .dec { margin: 0; }

@@ -384,7 +384,7 @@
     if (!host) return;
     if (typeof NN === 'undefined' || !NN.isReady()) {
       host.innerHTML = '<p class="hint">No trained weights loaded. ' +
-        (typeof NN !== 'undefined' && NN.error() ? esc(NN.error()) : 'weights.js missing') +
+        (typeof NN !== 'undefined' && NN.error() ? escapeHtml(NN.error()) : 'weights.js missing') +
         '</p>';
       return;
     }
@@ -405,6 +405,53 @@
       return '<div class="fact' + (good ? ' good' : '') + '"><span>' + r[0] +
              '</span><b>' + escapeHtml(String(r[1])) + '</b></div>';
     }).join('');
+  }
+
+  /* The three layers, and how much work each one is actually doing. The point
+   * of showing errors and fallbacks is that they are the normal case on a bad
+   * network, and the twin keeps running through them. */
+  let lastLlmKey = '';
+  function renderLlmFacts() {
+    const host = document.getElementById('llm-facts');
+    if (!host) return;
+    const s = AGENT.stats;
+    const key = [s.calls, s.errors, s.approvals, s.corrections, s.ruleOnly,
+                 s.rateLimited, s.modelInUse].join('|');
+    if (key === lastLlmKey) return;
+    lastLlmKey = key;
+    const reviewed = s.approvals + s.corrections;
+    const rows = [
+      ['1 · propose', AGENT.hasKey() ? (s.modelInUse || AGENT.MODEL) : 'no key — layer 3 only'],
+      ['2 · review', reviewed ? s.approvals + ' approved, ' + s.corrections + ' overruled' : 'waiting for a decision'],
+      ['3 · fall back', (s.ruleOnly + s.errors) + ' decisions made by the local rule'],
+      ['fallback chain', AGENT.MODEL_CHAIN.join(' → ')],
+      ['call budget', 'one supervised junction every ' + AGENT.callSpacingSec + 's' +
+        (AGENT.coolingDown() ? ' — cooling down after a rate limit' : '')],
+      ['rate limits hit', s.rateLimited + (AGENT.deadModels().length ? ' · retired: ' + AGENT.deadModels().join(', ') : '')],
+      ['round trip', s.calls ? s.avgLatencyMs + 'ms average' : '—'],
+      ['under all three', 'min green ' + SIM.SIGNAL.minGreen + 's · yellow ' + SIM.SIGNAL.yellow + 's · max green ' + SIM.SIGNAL.maxGreen + 's']
+    ];
+    host.innerHTML = rows.map(function (r) {
+      const good = r[0] === 'under all three';
+      return '<div class="fact' + (good ? ' good' : '') + '"><span>' + escapeHtml(r[0]) +
+             '</span><b>' + escapeHtml(String(r[1])) + '</b></div>';
+    }).join('');
+
+    const lastHost = document.getElementById('llm-last');
+    if (!lastHost) return;
+    const d = AGENT.lastSupervised();
+    if (!d) {
+      lastHost.innerHTML = '<p class="hint">No supervised decision yet. Switch the ' +
+        'controller to LLM AGENT and give it a few seconds.</p>';
+      return;
+    }
+    lastHost.innerHTML =
+      '<div class="dec' + (d.verdict === 'corrected' ? ' warn' : '') + '">' +
+      '<div class="dec-head"><span class="dec-j">' + escapeHtml(d.junctionId) + '</span>' +
+      '<span class="dec-action">' + escapeHtml(d.action) + '</span>' +
+      '<span class="dec-meta">' + (d.verdict === 'corrected' ? 'OVERRULED' : 'APPROVED') +
+      ' · ' + d.latencyMs + 'ms</span></div>' +
+      '<div class="dec-reason">' + escapeHtml(d.reason) + '</div></div>';
   }
 
   /* ---------------------------------------------------------------- sidebar */
@@ -468,7 +515,9 @@
     for (const d of AGENT.decisions.slice(0, 8)) {
       merged.push({
         t: d.simTime, cls: d.source, head: d.junctionId, action: d.action,
-        meta: d.source === 'gemini' ? d.latencyMs + 'ms' : d.source.toUpperCase(),
+        meta: d.source === 'gemini'
+          ? (d.verdict === 'corrected' ? 'CORRECTED · ' : d.verdict === 'approved' ? 'REVIEWED · ' : '') + d.latencyMs + 'ms'
+          : d.source.toUpperCase(),
         text: d.reason
       });
     }
@@ -531,7 +580,9 @@
     const mode = SIM.controlMode();
     if (mode === 'ai' && AGENT.hasKey()) {
       note.className = 'source-note live';
-      note.textContent = 'Controller: ' + AGENT.MODEL + ' · ' + AGENT.stats.calls + ' calls · ' + AGENT.stats.errors + ' errors';
+      note.textContent = 'Controller: ' + (AGENT.stats.modelInUse || AGENT.MODEL) +
+        ' · ' + AGENT.stats.calls + ' calls · ' + AGENT.stats.corrections + ' corrected · ' +
+        AGENT.stats.errors + ' errors';
     } else if (mode === 'ai') {
       note.className = 'source-note';
       note.textContent = 'Controller: local heuristic (no API key in config.js)';
@@ -539,6 +590,8 @@
       note.className = 'source-note';
       note.textContent = mode === 'plan' ? 'Controller: fixed-time plan' : 'Controller: Max-Pressure';
     }
+
+    renderLlmFacts();
   }
 
   function escapeHtml(s) {
