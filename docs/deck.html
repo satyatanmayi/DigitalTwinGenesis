@@ -14,78 +14,89 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;height:100%;background:var(--ground);color:var(--text);font-family:var(--body);overflow:hidden;}
-
   #viewport{position:fixed;inset:0;display:grid;place-items:center;}
   #stage{width:1280px;height:720px;position:relative;transform-origin:center center;}
-
-  .slide{
-    position:absolute;inset:0;padding:64px 72px;display:none;
-    flex-direction:column;background:var(--ground);
-  }
+  .slide{position:absolute;inset:0;padding:58px 68px;display:none;flex-direction:column;background:var(--ground);}
   .slide.on{display:flex;}
 
-  .eyebrow{font-family:var(--mono);font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;}
-  .eyebrow.warn{color:var(--warn);}
-  .eyebrow.good{color:var(--good);}
-  h1{font-family:var(--display);font-weight:800;font-size:74px;line-height:1.02;letter-spacing:-.02em;margin:0;text-wrap:balance;}
-  h2{font-family:var(--display);font-weight:700;font-size:48px;line-height:1.08;letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance;}
-  .lede{font-size:23px;color:var(--dim);margin:14px 0 0;max-width:34ch;line-height:1.45;}
+  .eyebrow{font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;}
+  .eyebrow.warn{color:var(--warn);} .eyebrow.good{color:var(--good);}
+  .rubric{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.08em;}
+  .top{display:flex;align-items:baseline;}
+  h1{font-family:var(--display);font-weight:800;font-size:70px;line-height:1.03;letter-spacing:-.02em;margin:0;text-wrap:balance;}
+  h2{font-family:var(--display);font-weight:700;font-size:46px;line-height:1.08;letter-spacing:-.015em;margin:0 0 8px;text-wrap:balance;}
+  .lede{font-size:22px;color:var(--dim);margin:12px 0 0;max-width:38ch;line-height:1.45;}
   .fill{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}
   .fill svg{width:100%;height:100%;max-height:100%;}
-  .foot{font-family:var(--mono);font-size:14px;color:var(--dim);letter-spacing:.04em;}
+  .foot{font-family:var(--mono);font-size:14px;color:var(--dim);letter-spacing:.04em;margin:0;}
 
-  .cols{display:grid;grid-template-columns:1fr 1fr;gap:44px;flex:1;min-height:0;align-items:center;}
-  .cols.wide-right{grid-template-columns:0.85fr 1.15fr;}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:40px;flex:1;min-height:0;align-items:center;}
+  .cols.left-narrow{grid-template-columns:.8fr 1.2fr;}
 
-  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
-  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px 26px;}
-  .stat .n{font-family:var(--display);font-size:52px;font-weight:800;color:var(--accent);line-height:1;}
-  .stat .n.warn{color:var(--warn);}
-  .stat .k{font-size:17px;color:var(--text);margin-top:10px;font-weight:600;}
-  .stat .s{font-family:var(--mono);font-size:13px;color:var(--dim);margin-top:6px;}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;}
+  .stat .n{font-family:var(--display);font-size:48px;font-weight:800;color:var(--accent);line-height:1;}
+  .stat .n.warn{color:var(--warn);} .stat .n.good{color:var(--good);}
+  .stat .k{font-size:16px;margin-top:9px;font-weight:600;}
+  .stat .s{font-family:var(--mono);font-size:12.5px;color:var(--dim);margin-top:5px;}
 
-  ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:18px;}
-  ul.pts li{display:flex;gap:16px;align-items:flex-start;font-size:22px;line-height:1.35;}
-  ul.pts .mk{font-family:var(--mono);font-size:14px;color:var(--accent);border:1px solid var(--accent);
+  ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:15px;width:100%;}
+  ul.pts li{display:flex;gap:15px;align-items:flex-start;font-size:21px;line-height:1.32;}
+  ul.pts .mk{font-family:var(--mono);font-size:13px;color:var(--accent);border:1px solid var(--accent);
     border-radius:5px;padding:3px 8px;flex:0 0 auto;margin-top:3px;}
   ul.pts.warn .mk{color:var(--warn);border-color:var(--warn);}
-  ul.pts li small{display:block;font-size:16px;color:var(--dim);margin-top:4px;font-family:var(--body);}
+  ul.pts.good .mk{color:var(--good);border-color:var(--good);}
+  ul.pts li small{display:block;font-size:15.5px;color:var(--dim);margin-top:3px;}
 
-  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;flex:1;align-items:center;}
-  .pillar{border-top:3px solid var(--accent);padding-top:22px;}
-  .pillar h3{font-family:var(--display);font-size:38px;margin:0 0 12px;font-weight:700;}
-  .pillar p{font-size:19px;color:var(--dim);margin:0;line-height:1.45;}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;flex:1;align-items:center;}
+  .pillar{border-top:3px solid var(--accent);padding-top:20px;}
+  .pillar h3{font-family:var(--display);font-size:34px;margin:0 0 10px;font-weight:700;}
+  .pillar p{font-size:18px;color:var(--dim);margin:0;line-height:1.42;}
 
-  .quote{font-family:var(--display);font-size:56px;font-weight:700;line-height:1.12;letter-spacing:-.02em;text-wrap:balance;}
+  .quote{font-family:var(--display);font-size:52px;font-weight:700;line-height:1.14;letter-spacing:-.02em;text-wrap:balance;}
   .quote .em{color:var(--accent);}
 
-  .ledger{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-  .ledger div{border-radius:12px;padding:26px 28px;}
+  .ledger{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .ledger div{border-radius:12px;padding:22px 24px;}
   .ledger .saved{background:var(--good-soft);border-left:5px solid var(--good);}
   .ledger .paid{background:var(--warn-soft);border-left:5px solid var(--warn);}
-  .ledger .n{font-family:var(--display);font-size:56px;font-weight:800;line-height:1;}
-  .ledger .saved .n{color:var(--good);}
-  .ledger .paid .n{color:var(--warn);}
-  .ledger .k{font-size:17px;margin-top:10px;color:var(--text);}
-  .stamp{margin-top:20px;font-family:var(--mono);font-size:17px;letter-spacing:.06em;color:var(--danger);
-    border:2px solid var(--danger);border-radius:8px;padding:12px 16px;display:inline-block;}
+  .ledger .n{font-family:var(--display);font-size:50px;font-weight:800;line-height:1;}
+  .ledger .saved .n{color:var(--good);} .ledger .paid .n{color:var(--warn);}
+  .ledger .k{font-size:16px;margin-top:9px;}
+  .stamp{margin-top:18px;font-family:var(--mono);font-size:16px;letter-spacing:.05em;color:var(--danger);
+    border:2px solid var(--danger);border-radius:8px;padding:11px 15px;display:inline-block;}
 
-  .title-mark{width:118px;height:6px;background:var(--accent);border-radius:3px;margin:30px 0 26px;}
-  .byline{font-family:var(--mono);font-size:17px;color:var(--dim);letter-spacing:.05em;}
+  .formula{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 26px;
+    font-family:var(--mono);font-size:16px;line-height:1.9;color:var(--accent-2,#67E8F9);}
+  .formula .num{color:var(--good);} .formula .den{color:var(--warn);} .formula .bar{color:var(--dim);}
 
-  /* chrome */
+  table.mini{width:100%;border-collapse:collapse;font-size:17px;}
+  table.mini th{text-align:left;font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--dim);font-weight:500;padding-bottom:8px;border-bottom:1px solid var(--line);}
+  table.mini td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top;}
+  table.mini td.k{font-family:var(--mono);font-size:14px;color:var(--accent);white-space:nowrap;}
+  table.mini td.v{color:var(--dim);font-size:16px;}
+
+  .inv{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;}
+  .inv div{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--good);
+    border-radius:10px;padding:16px 18px;}
+  .inv b{display:block;font-size:18px;margin-bottom:4px;}
+  .inv span{font-size:14.5px;color:var(--dim);font-family:var(--mono);}
+
+  .title-mark{width:112px;height:6px;background:var(--accent);border-radius:3px;margin:26px 0 22px;}
+  .byline{font-family:var(--mono);font-size:16px;color:var(--dim);letter-spacing:.05em;margin:0;}
+
   #bar{position:fixed;left:0;right:0;bottom:0;height:3px;background:var(--surface2);z-index:5;}
   #bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s ease;}
-  #hud{position:fixed;right:16px;bottom:16px;font-family:var(--mono);font-size:13px;color:var(--dim);z-index:6;}
-  #help{position:fixed;left:16px;bottom:14px;font-family:var(--mono);font-size:12px;color:var(--dim);z-index:6;}
-  #notes{position:fixed;left:0;right:0;bottom:0;max-height:42vh;overflow:auto;background:var(--surface);
-    border-top:2px solid var(--accent);padding:22px 28px;display:none;z-index:7;}
+  #hud{position:fixed;right:16px;bottom:14px;font-family:var(--mono);font-size:13px;color:var(--dim);z-index:6;}
+  #help{position:fixed;left:16px;bottom:12px;font-family:var(--mono);font-size:12px;color:var(--dim);z-index:6;}
+  #notes{position:fixed;left:0;right:0;bottom:0;max-height:44vh;overflow:auto;background:var(--surface);
+    border-top:2px solid var(--accent);padding:20px 26px;display:none;z-index:7;}
   #notes.on{display:block;}
-  #notes h4{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 10px;}
-  #notes p{font-size:17px;line-height:1.55;margin:0 0 12px;max-width:100ch;}
-  #notes .time{font-family:var(--mono);color:var(--dim);font-size:13px;}
+  #notes h4{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 8px;}
+  #notes p{font-size:17px;line-height:1.55;margin:0;max-width:104ch;white-space:pre-line;}
+  #notes .time{color:var(--dim);}
 
-  /* svg helpers */
   .sl{stroke:var(--line);} .sa{stroke:var(--accent);} .sw{stroke:var(--warn);}
   .sg{stroke:var(--good);} .sd{stroke:var(--danger);}
   .ft{fill:var(--text);} .fd{fill:var(--dim);} .fa{fill:var(--accent);} .fw{fill:var(--warn);}
@@ -94,14 +105,14 @@
   .bw{fill:var(--warn-soft);} .bg{fill:var(--good-soft);}
   .ar{stroke:var(--dim);stroke-width:2;fill:none;} .ah{fill:var(--dim);}
   svg text{font-family:var(--body);font-size:17px;}
-  svg text.m{font-family:var(--mono);font-size:15px;}
-  svg text.b{font-family:var(--display);font-weight:700;font-size:22px;}
+  svg text.m{font-family:var(--mono);font-size:14.5px;}
+  svg text.b{font-family:var(--display);font-weight:700;font-size:21px;}
 
   @media print{
     html,body{overflow:visible;height:auto;}
     #viewport{position:static;display:block;}
-    #stage{transform:none!important;width:1280px;height:720px;}
-    .slide{display:flex!important;position:relative;page-break-after:always;break-after:page;width:1280px;height:720px;}
+    #stage{transform:none!important;}
+    .slide{display:flex!important;position:relative;page-break-after:always;break-after:page;}
     #bar,#hud,#help,#notes{display:none!important;}
   }
 </style>
@@ -109,256 +120,284 @@
 <div id="viewport"><div id="stage">
 
 <!-- 1 -->
-<section class="slide on" data-notes="Good morning. We're team [name], and we picked problem statement four — the digital twin of a traffic intersection." data-time="15s">
+<section class="slide on" data-time="10s" data-notes="Good morning. I'm [name], and our problem statement is the digital twin of a traffic intersection.">
   <p class="eyebrow">Problem statement 4 · Digital Twin</p>
   <h1>Rehearsal<br>before the road</h1>
   <div class="title-mark"></div>
-  <p class="lede">A digital twin where a city can test signal timings before they reach real traffic.</p>
+  <p class="lede">A traffic twin where a city can test a signal decision before real traffic pays for it.</p>
   <div class="fill"></div>
-  <p class="byline">Digital Twin Genesis · team names · date</p>
+  <p class="byline">Part of Project Kalavathi · team names · date</p>
 </section>
 
 <!-- 2 -->
-<section class="slide" data-notes="In India, most families do not wait for an ambulance in an emergency. They put the patient in their own car and drive. That happened in my family. The car was not slow. The patient lost time standing at red lights, one junction after another. A ten kilometre city drive crosses eight to twelve signalled junctions. That is where the time goes." data-time="60s">
-  <p class="eyebrow warn">Why we chose this</p>
-  <h2>The ambulance was not slow.<br>The signals were.</h2>
+<section class="slide" data-time="50s" data-notes="Before I get into the product, I want to explain the bigger project it came from, because that's what makes it matter.
+
+The project is called Kalavathi. In India, when there's a medical emergency at home — someone has a heart attack — the family's first instinct is not to wait for an ambulance. They put the patient in their own car and drive. That's what happened in my family.
+
+So Kalavathi lets a private vehicle become a recognised emergency vehicle for one trip, through a token the hospital authorises. The point of that token is signal priority — so that car gets treated like an ambulance while it's carrying a patient.
+
+And the car isn't slow. The driver isn't slow. The time is lost standing at red lights — eight to twelve junctions on a ten kilometre drive, a minute at each.">
+  <div class="top"><p class="eyebrow warn">The bigger project</p><span class="rubric">PROBLEM UNDERSTANDING</span></div>
+  <h2>The car was not slow. The signals were.</h2>
+  <p class="lede" style="max-width:70ch">Project Kalavathi: let a private vehicle become a recognised emergency vehicle for one trip — hospital-authorised — so a family driving a patient gets signal priority.</p>
   <div class="fill">
-    <svg viewBox="0 0 1120 250" role="img" aria-label="A family car crossing four junctions to reach hospital, stopped 60, 90, 75 and 80 seconds, losing about five minutes.">
-      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
-      <rect x="30" y="120" width="1060" height="34" rx="4" class="bs2"/>
-      <line x1="30" y1="137" x2="1090" y2="137" class="sl" stroke-width="1" stroke-dasharray="12 14"/>
-      <rect x="38" y="125" width="40" height="24" rx="4" class="fa"/>
+    <svg viewBox="0 0 1120 210" role="img" aria-label="A family car crossing four junctions to hospital, stopped 60, 90, 75 and 80 seconds, about five minutes lost.">
+      <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+      <rect x="30" y="104" width="1060" height="32" rx="4" class="bs2"/>
+      <rect x="38" y="109" width="40" height="22" rx="4" class="fa"/>
       <g class="sl" stroke-width="2">
-        <rect x="238" y="110" width="54" height="54" rx="5" class="bs2"/>
-        <rect x="450" y="110" width="54" height="54" rx="5" class="bs2"/>
-        <rect x="662" y="110" width="54" height="54" rx="5" class="bs2"/>
-        <rect x="874" y="110" width="54" height="54" rx="5" class="bs2"/>
+        <rect x="238" y="94" width="52" height="52" rx="5" class="bs2"/><rect x="450" y="94" width="52" height="52" rx="5" class="bs2"/>
+        <rect x="662" y="94" width="52" height="52" rx="5" class="bs2"/><rect x="874" y="94" width="52" height="52" rx="5" class="bs2"/>
       </g>
-      <g class="fdg"><circle cx="265" cy="137" r="11"/><circle cx="477" cy="137" r="11"/><circle cx="689" cy="137" r="11"/><circle cx="901" cy="137" r="11"/></g>
-      <g text-anchor="middle">
-        <text x="265" y="88" class="b fw">60s</text><text x="477" y="88" class="b fw">90s</text>
-        <text x="689" y="88" class="b fw">75s</text><text x="901" y="88" class="b fw">80s</text>
-        <text x="265" y="196" class="m fd">J1</text><text x="477" y="196" class="m fd">J2</text>
-        <text x="689" y="196" class="m fd">J3</text><text x="901" y="196" class="m fd">J4</text>
-      </g>
-      <g class="ar" marker-end="url(#a1)">
-        <path d="M 92 137 L 226 137"/><path d="M 304 137 L 438 137"/>
-        <path d="M 516 137 L 650 137"/><path d="M 728 137 L 862 137"/><path d="M 940 137 L 1000 137"/>
-      </g>
-      <rect x="1012" y="112" width="60" height="50" rx="5" class="bg"/>
-      <rect x="1036" y="120" width="12" height="34" class="fg"/><rect x="1024" y="132" width="36" height="10" class="fg"/>
-      <text x="560" y="238" class="b fw" text-anchor="middle">≈ 5 minutes lost standing still — none of it on the open road</text>
+      <g class="fdg"><circle cx="264" cy="120" r="10"/><circle cx="476" cy="120" r="10"/><circle cx="688" cy="120" r="10"/><circle cx="900" cy="120" r="10"/></g>
+      <g text-anchor="middle"><text x="264" y="74" class="b fw">60s</text><text x="476" y="74" class="b fw">90s</text>
+      <text x="688" y="74" class="b fw">75s</text><text x="900" y="74" class="b fw">80s</text></g>
+      <g class="ar" marker-end="url(#m1)"><path d="M 92 120 L 226 120"/><path d="M 302 120 L 438 120"/>
+      <path d="M 514 120 L 650 120"/><path d="M 726 120 L 862 120"/><path d="M 938 120 L 1000 120"/></g>
+      <rect x="1012" y="96" width="58" height="48" rx="5" class="bg"/>
+      <rect x="1036" y="104" width="11" height="32" class="fg"/><rect x="1025" y="115" width="33" height="10" class="fg"/>
+      <text x="560" y="192" class="b fw" text-anchor="middle">≈ 5 minutes lost standing still — none of it on the open road</text>
     </svg>
   </div>
 </section>
 
 <!-- 3 -->
-<section class="slide" data-notes="And this is not only an emergency problem. Every city runs thousands of signals. When they are timed badly everybody pays — in time, in fuel burned standing still, and in patience, which is when people start jumping signals and it stops being safe." data-time="35s">
-  <p class="eyebrow warn">The everyday version</p>
-  <h2>Badly timed signals bill everyone, every day</h2>
+<section class="slide" data-time="40s" data-notes="Now, the technology to hold a signal green already exists. That's not the hard part. The hard part is this: the moment you give a vehicle priority, somebody else pays for it in waiting time.
+
+So before any traffic department will even discuss letting ordinary cars request priority, they ask one question: what will this cost my network?
+
+Nobody could answer that, because there was nowhere to try it. You can't experiment on a live city.
+
+So we built the place to try it. That's the simulator I'm showing you today — and it's a part of Kalavathi, not a separate thing.">
+  <div class="top"><p class="eyebrow warn">Where that project hit a wall</p><span class="rubric">PROBLEM UNDERSTANDING</span></div>
+  <h2>Holding a signal green is easy. Justifying it is not.</h2>
   <div class="fill">
-    <div class="stat-row" style="width:100%">
-      <div class="stat"><div class="n warn">Time</div><div class="k">Minutes lost per trip, per person, per day</div><div class="s">the same junctions, twice a day</div></div>
-      <div class="stat"><div class="n warn">Fuel</div><div class="k">Engines burning while standing still</div><div class="s">and the air that comes with it</div></div>
-      <div class="stat"><div class="n warn">Patience</div><div class="k">Frustration turns into signal jumping</div><div class="s">a timing problem becomes a safety problem</div></div>
+    <div style="width:100%">
+      <div class="three" style="gap:30px">
+        <div class="pillar" style="border-color:var(--warn)"><h3 style="font-size:28px">Give priority</h3><p>One vehicle gets through faster.</p></div>
+        <div class="pillar" style="border-color:var(--warn)"><h3 style="font-size:28px">Somebody pays</h3><p>Everyone on the crossing roads waits longer. Always.</p></div>
+        <div class="pillar"><h3 style="font-size:28px">Nobody measures it</h3><p>So no traffic department can say yes — there was nowhere to find out.</p></div>
+      </div>
     </div>
   </div>
+  <p class="foot">This simulator is the part of Kalavathi that answers “what will it cost my network?”</p>
 </section>
 
 <!-- 4 -->
-<section class="slide" data-notes="Here is what surprised us. If an engineer wants to improve a junction, they change the timing on the real signal and watch the real road. There is no rehearsal. The road is the test environment — and if the change is wrong, the jam is real and the people in it are real." data-time="50s">
-  <p class="eyebrow warn">The real constraint</p>
-  <h2>Today, the road is the test environment</h2>
-  <div class="fill">
-    <svg viewBox="0 0 1120 300" role="img" aria-label="Today an engineer changes the live junction and waits to see. With a twin the engineer tests and compares first, and only the winning plan goes to the street.">
-      <defs><marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
-      <rect x="10" y="30" width="520" height="250" rx="10" class="bw"/>
-      <text x="34" y="20" class="m fw">TODAY</text>
-      <rect x="44" y="76" width="150" height="60" rx="6" fill="none" stroke-width="2" class="sl"/>
-      <text x="119" y="112" class="ft" text-anchor="middle">engineer</text>
-      <rect x="342" y="76" width="160" height="60" rx="6" fill="none" stroke-width="2" class="sw"/>
-      <text x="422" y="102" class="ft" text-anchor="middle">live junction</text>
-      <text x="422" y="124" class="m fd" text-anchor="middle">real queue, real people</text>
-      <path d="M 200 96 L 334 96" class="ar" marker-end="url(#a4)"/>
-      <text x="267" y="84" class="m fd" text-anchor="middle">change it</text>
-      <path d="M 334 122 L 200 122" class="ar" marker-end="url(#a4)" stroke-dasharray="6 5"/>
-      <text x="267" y="142" class="m fd" text-anchor="middle">wait and watch</text>
-      <text x="270" y="196" class="b fw" text-anchor="middle">Wrong guess = a real traffic jam.</text>
-      <text x="270" y="230" class="m fd" text-anchor="middle">no rehearsal · no undo · no record of what was tried</text>
+<section class="slide" data-time="45s" data-notes="Let me be clear about what exists, because I don't want to claim something that's already deployed.
 
-      <rect x="580" y="30" width="530" height="250" rx="10" class="ba"/>
-      <text x="604" y="20" class="m fa">WITH A TWIN</text>
-      <rect x="608" y="76" width="130" height="60" rx="6" fill="none" stroke-width="2" class="sl"/>
-      <text x="673" y="112" class="ft" text-anchor="middle">engineer</text>
-      <rect x="778" y="66" width="160" height="80" rx="6" fill="none" stroke-width="2" class="sa"/>
-      <text x="858" y="98" class="ft" text-anchor="middle">the twin</text>
-      <text x="858" y="122" class="m fd" text-anchor="middle">identical traffic,</text>
-      <text x="858" y="140" class="m fd" text-anchor="middle">replayed each test</text>
-      <rect x="978" y="76" width="112" height="60" rx="6" fill="none" stroke-width="2" class="sg"/>
-      <text x="1034" y="102" class="ft" text-anchor="middle">live</text><text x="1034" y="124" class="ft" text-anchor="middle">junction</text>
-      <path d="M 744 106 L 772 106" class="ar" marker-end="url(#a4)"/>
-      <path d="M 944 106 L 972 106" class="ar" marker-end="url(#a4)"/>
-      <text x="1034" y="58" class="m fg" text-anchor="middle">only the winner</text>
-      <path d="M 858 152 C 858 196, 673 196, 673 146" class="ar sa" marker-end="url(#a4)"/>
-      <text x="770" y="220" class="m fa" text-anchor="middle">try · measure · compare · repeat</text>
-    </svg>
+Adaptive traffic control is real. Bengaluru runs it across about a hundred and sixty-five junctions, using an Indian system called CoSiCoSt from C-DAC. Pittsburgh's Surtrac cut travel time by a quarter. Emergency preemption is an international standard — NTCIP 1211 — and it even covers triaging more than one request.
+
+So adaptive signal control is not my idea and I'm not claiming it. What I found is five places where these systems stop — and every one of them is a place where a decision gets made with no way to test it first.">
+  <div class="top"><p class="eyebrow">Prior art — before you ask</p><span class="rubric">PROBLEM UNDERSTANDING</span></div>
+  <h2>Adaptive control already works. I am not claiming it.</h2>
+  <div class="fill">
+    <div class="stat-row">
+      <div class="stat"><div class="n">165</div><div class="k">junctions on B-ATCS, Bengaluru</div><div class="s">CoSiCoSt, built by C-DAC for Indian traffic</div></div>
+      <div class="stat"><div class="n">−25%</div><div class="k">travel time, Surtrac Pittsburgh</div><div class="s">schedule-driven, genuinely predictive</div></div>
+      <div class="stat"><div class="n">1211</div><div class="k">NTCIP standard for signal priority</div><div class="s">already defines triaging several requests</div></div>
+    </div>
   </div>
+  <p class="foot">SCATS · SCOOT · InSync worldwide · Google Project Green Light recommends plans from Maps data in 14 cities</p>
 </section>
 
 <!-- 5 -->
-<section class="slide" data-notes="Before building anything we checked what exists, and a lot exists. Bengaluru already runs an Indian-made adaptive system called CoSiCoSt across about 165 junctions. Pittsburgh's Surtrac cut travel time by a quarter. So let me be clear: adaptive signal control is not new and we are not claiming it." data-time="45s">
-  <p class="eyebrow">Prior art — said before you ask</p>
-  <h2>Adaptive control already works. We are not competing with it.</h2>
-  <div class="fill">
-    <div class="stat-row" style="width:100%">
-      <div class="stat"><div class="n">165</div><div class="k">junctions on B-ATCS in Bengaluru</div><div class="s">CoSiCoSt, built by C-DAC for Indian traffic</div></div>
-      <div class="stat"><div class="n">−33%</div><div class="k">travel time at Hudson Circle</div><div class="s">reported by Bengaluru Traffic Police</div></div>
-      <div class="stat"><div class="n">−25%</div><div class="k">travel time, Surtrac Pittsburgh</div><div class="s">waiting down about 40%</div></div>
-    </div>
-  </div>
-  <p class="foot">SCATS · SCOOT · InSync deployed worldwide · priority signalling is a standard: NTCIP 1211</p>
-</section>
+<section class="slide" data-time="55s" data-notes="One. The hardware costs a fortune. Sensors and cameras at every junction across a city is a huge bill, and that's the reason most Indian cities don't have it.
 
-<!-- 6 -->
-<section class="slide" data-notes="But those systems stop at five places, and these are documented, not our opinion. They are expensive to install. They degrade when a sensor breaks. Switching plans wastes time. They do badly at rare events, because rare events are what they have never seen. And they struggle with mixed traffic where nobody stays in a lane." data-time="55s">
-  <p class="eyebrow warn">Where it stops</p>
-  <h2>Five documented gaps</h2>
+Two. When a sensor fails or a camera gets blocked, that junction degrades until someone repairs it.
+
+Three. Switching between timing plans, or talking to older controllers, wastes time in itself.
+
+Four — and this is the important one — rare events. Accidents, closures, waterlogging, a diversion done by hand. These systems are tuned on the ordinary day, and the unusual day gets handed back to a human on a radio. We call that the bad day.
+
+Five. Mixed traffic. Two-wheelers and autos that don't stay in lanes make queue counting genuinely hard, and every one of these systems was designed somewhere that doesn't have that problem.">
+  <div class="top"><p class="eyebrow warn">Where they stop</p><span class="rubric">PROBLEM UNDERSTANDING</span></div>
+  <h2>Five documented limits</h2>
   <div class="fill">
-    <ul class="pts warn" style="width:100%">
-      <li><span class="mk">01</span><div>City-wide sensors and cameras cost a fortune<small>the barrier to adopting adaptive control at all</small></div></li>
-      <li><span class="mk">02</span><div>One blocked camera degrades the junction until it is repaired</div></li>
-      <li><span class="mk">03</span><div>Switching timing plans — and talking to legacy controllers — wastes time</div></li>
-      <li><span class="mk">04</span><div>Rare events are exactly what a learned model has never seen<small>accidents, closures, manual diversions</small></div></li>
-      <li><span class="mk">05</span><div>Mixed traffic breaks queue estimation<small>two-wheelers and autos, no lane discipline</small></div></li>
+    <ul class="pts warn">
+      <li><span class="mk">01</span><div>Sensors and cameras at every junction cost a fortune<small>which is why most Indian cities do not have them</small></div></li>
+      <li><span class="mk">02</span><div>A failed or blocked detector degrades that junction until it is repaired</div></li>
+      <li><span class="mk">03</span><div>Switching timing plans — and talking to legacy controllers — wastes time itself</div></li>
+      <li><span class="mk">04</span><div>Rare events are handed back to a human on a radio<small>accidents, closures, waterlogging, manual diversions — the bad day</small></div></li>
+      <li><span class="mk">05</span><div>Mixed traffic breaks queue counting<small>two-wheelers and autos, no lane discipline</small></div></li>
     </ul>
   </div>
 </section>
 
-<!-- 7 -->
-<section class="slide" data-notes="So this is what we built. A digital twin of a road network that runs in a browser. Three words describe what makes it different, and I will show you each one." data-time="45s">
-  <p class="eyebrow">Our answer</p>
-  <h2>A twin that runs in a browser. Open a link, and the junction is yours.</h2>
-  <div class="three">
-    <div class="pillar"><h3>Preview</h3><p>Try the timing here, before it touches the road.</p></div>
-    <div class="pillar"><h3>Reason</h3><p>Every automatic change says why, in one sentence, citing the queue numbers.</p></div>
-    <div class="pillar"><h3>Receipt</h3><p>Give someone priority, and see what it cost everybody else.</p></div>
+<!-- 6 -->
+<section class="slide" data-time="60s" data-notes="Let me give you the exact case that started this.
+
+Two ambulances. Different roads. Same junction. Arriving within seconds of each other, and they need opposite green phases — so only one of them can go.
+
+Somebody has to choose. Right now that choice is either a fixed rule — whoever asked first — or a human on a radio with no information.
+
+Now make it harder. Kalavathi means the requesters aren't fifty authorised ambulances any more. They could be thousands of ordinary cars. Conflicts stop being rare and become constant.
+
+That is a scheduling problem with priority and concurrency, and it's the problem we're solving.">
+  <div class="top"><p class="eyebrow good">The hard case</p><span class="rubric">INNOVATION</span></div>
+  <h2>Two ambulances. One junction. Opposite phases.</h2>
+  <div class="fill">
+    <svg viewBox="0 0 1120 300" role="img" aria-label="Two ambulances approaching the same junction from different roads, needing opposite green phases, arriving 12 and 15 seconds from now.">
+      <defs><marker id="m6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+      <rect x="0" y="122" width="1120" height="60" class="bs2"/>
+      <rect x="500" y="0" width="60" height="300" class="bs2"/>
+      <rect x="490" y="112" width="80" height="80" rx="6" class="bs"/>
+      <rect x="490" y="112" width="80" height="80" rx="6" fill="none" stroke-width="2" class="sl"/>
+
+      <rect x="120" y="140" width="66" height="26" rx="4" class="fg"/>
+      <text x="153" y="122" class="b fg" text-anchor="middle">AMBULANCE A</text>
+      <text x="153" y="196" class="m fd" text-anchor="middle">east-west · arrives in 12 s</text>
+      <text x="153" y="218" class="m fd" text-anchor="middle">severity S1 · verified</text>
+      <path d="M 200 153 L 470 153" class="ar sg" marker-end="url(#m6)"/>
+
+      <rect x="516" y="26" width="26" height="66" rx="4" class="fw"/>
+      <text x="640" y="46" class="b fw">AMBULANCE B</text>
+      <text x="640" y="72" class="m fd">north-south · arrives in 15 s</text>
+      <text x="640" y="94" class="m fd">severity S1 · verified · waiting 40 s already</text>
+      <path d="M 529 100 L 529 104" class="ar sw"/>
+      <path d="M 529 26 L 529 106" class="ar sw" marker-end="url(#m6)"/>
+
+      <text x="700" y="168" class="b fdg">Only one can be served.</text>
+      <text x="700" y="200" class="ft">Today: whoever asked first, or a human on a radio.</text>
+      <text x="700" y="228" class="ft">And with private vehicles requesting too,</text>
+      <text x="700" y="254" class="ft">this stops being rare and becomes constant.</text>
+    </svg>
   </div>
-  <p class="foot">Adaptive control optimises the average day. We let you rehearse the bad day.</p>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-time="60s" data-notes="So what do we decide on?
+
+Existing systems assign a class in advance — ambulance beats bus beats car — and serve the highest class. That works when conflicts are rare.
+
+We score each request live, as a benefit-to-cost ratio. Some things come in from outside and we never guess them: how severe the case is — that's from the hospital, never from us, because a traffic system should not be making medical judgments — whether the request is verified, the vehicle type, and how many people are on board.
+
+Then the things we calculate ourselves, which is the actual work: we run the twin forward twice — grant it, and don't grant it — and we measure how many seconds that vehicle saves, and how many vehicle-seconds everybody else pays. Plus how long this request has already waited, so nothing starves, and whether we can even hold the phase in time.
+
+So the same ambulance can be granted at three in the afternoon and refused at six in the evening — and the system tells you why.">
+  <div class="top"><p class="eyebrow good">How we choose</p><span class="rubric">INNOVATION</span></div>
+  <h2>Not a class. A price.</h2>
+  <div class="cols">
+    <div>
+      <div class="formula">
+        <span class="num">severity × persons × seconds&nbsp;saved</span> + ageing<br>
+        <span class="bar">──────────────────────────────────────</span><br>
+        <span class="den">cost&nbsp;to&nbsp;cross&nbsp;traffic</span> + conflict&nbsp;penalty
+      </div>
+      <p class="foot" style="margin-top:18px">Both sides measured in person-seconds.<br>Granted · Queued · Refused — each with the reason named.</p>
+    </div>
+    <table class="mini">
+      <tr><th>Given to us — never inferred</th><th></th></tr>
+      <tr><td class="k">severity</td><td class="v">from the hospital. A traffic system makes no medical judgment</td></tr>
+      <tr><td class="k">verified?</td><td class="v">from the other half of the project</td></tr>
+      <tr><td class="k">persons</td><td class="v">a bus with 40 people is not one vehicle</td></tr>
+      <tr><th style="padding-top:14px">Computed here — the actual work</th><th></th></tr>
+      <tr><td class="k">saved</td><td class="v">run the twin forward: granted vs not granted</td></tr>
+      <tr><td class="k">cost</td><td class="v">the same two runs, for everyone else</td></tr>
+      <tr><td class="k">ageing</td><td class="v">seconds already waited, so nothing starves</td></tr>
+    </table>
+  </div>
 </section>
 
 <!-- 8 -->
-<section class="slide" data-notes="This is the planner's side, and it answers the problem statement directly. You drag a green light longer. You press test. And here is the important part: every test replays exactly the same traffic — same vehicles, same arrival times. So when the number improves, it is your plan that improved it, not luck. Then you can make a published algorithm play the same round." data-time="70s">
-  <p class="eyebrow">Deliverable · PLAN mode</p>
-  <h2>Find a better timing, and prove it</h2>
+<section class="slide" data-time="35s" data-notes="And that's the shift. Today, in traffic, the action is taken first and you find out afterwards whether it worked. If it didn't, that's a gridlock and lost time, and it already happened.
+
+Here, we simulate the decision before we make it.">
+  <div class="top"><p class="eyebrow good">The shift</p><span class="rubric">INNOVATION</span></div>
+  <h2>Act first, find out later — or find out first, then act</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 300" role="img" aria-label="Five step loop: see the target, change a green, test on identical traffic, read the verdict, keep the best, then loop back to changing a green.">
-      <defs><marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
-      <g fill="none" stroke-width="2">
-        <rect x="10" y="60" width="188" height="104" rx="8" class="sl"/>
-        <rect x="238" y="60" width="188" height="104" rx="8" class="sl"/>
-        <rect x="466" y="60" width="188" height="104" rx="8" class="sa" stroke-width="3"/>
-        <rect x="694" y="60" width="188" height="104" rx="8" class="sl"/>
-        <rect x="922" y="60" width="188" height="104" rx="8" class="sl"/>
+    <svg viewBox="0 0 1120 250" role="img" aria-label="Today: decide then act then find out. With the twin: decide, simulate both futures, then act.">
+      <defs><marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+      <text x="0" y="22" class="m fw">TODAY</text>
+      <g fill="none" stroke-width="2" class="sw">
+        <rect x="0" y="40" width="200" height="58" rx="8"/><rect x="250" y="40" width="200" height="58" rx="8"/><rect x="500" y="40" width="260" height="58" rx="8"/>
       </g>
-      <g text-anchor="middle">
-        <text x="104" y="46" class="m fa">1</text><text x="332" y="46" class="m fa">2</text>
-        <text x="560" y="46" class="m fa">3</text><text x="788" y="46" class="m fa">4</text><text x="1016" y="46" class="m fa">5</text>
-        <text x="104" y="104" class="b ft">See the target</text><text x="104" y="134" class="m fd">under 15.0s</text>
-        <text x="332" y="104" class="b ft">Change a green</text><text x="332" y="134" class="m fd">E–W 18s → 24s</text>
-        <text x="560" y="104" class="b ft">Test it</text><text x="560" y="134" class="m fd">same cars, same order</text>
-        <text x="788" y="104" class="b ft">Read the verdict</text><text x="788" y="134" class="m fd">table says better or worse</text>
-        <text x="1016" y="104" class="b ft">Keep the best</text><text x="1016" y="134" class="m fd">revert any time</text>
+      <g text-anchor="middle" class="ft"><text x="100" y="75">decide</text><text x="350" y="75">act on the road</text><text x="630" y="75">find out if it worked</text></g>
+      <g class="ar sw" marker-end="url(#m8)"><path d="M 206 69 L 244 69"/><path d="M 456 69 L 494 69"/></g>
+      <text x="790" y="75" class="b fdg">and it already happened</text>
+
+      <text x="0" y="158" class="m fa">WITH THE TWIN</text>
+      <g fill="none" stroke-width="2" class="sa">
+        <rect x="0" y="176" width="200" height="58" rx="8"/><rect x="250" y="176" width="300" height="58" rx="8"/><rect x="600" y="176" width="220" height="58" rx="8"/>
       </g>
-      <g class="ar" marker-end="url(#a8)">
-        <path d="M 204 112 L 232 112"/><path d="M 432 112 L 460 112"/>
-        <path d="M 660 112 L 688 112"/><path d="M 888 112 L 916 112"/>
-      </g>
-      <path d="M 1016 168 C 1016 226, 332 226, 332 168" class="ar sa" marker-end="url(#a8)"/>
-      <rect x="290" y="246" width="540" height="40" rx="6" class="ba"/>
-      <text x="560" y="272" class="m fa" text-anchor="middle">or press BEAT MAX-PRESSURE and let the algorithm play the same round</text>
+      <g text-anchor="middle" class="ft"><text x="100" y="211">decide</text><text x="400" y="211">simulate both futures</text><text x="710" y="211">act on the road</text></g>
+      <g class="ar sa" marker-end="url(#m8)"><path d="M 206 205 L 244 205"/><path d="M 556 205 L 594 205"/></g>
+      <text x="850" y="211" class="b fg">knowing the cost</text>
     </svg>
   </div>
 </section>
 
 <!-- 9 -->
-<section class="slide" data-notes="This is the control room's side: the bad day. One click gives you a collision blocking an approach, and you watch the queue grow backwards into the junction behind. Another gives you a flooded road where speeds drop and heavy vehicles are barred — which is why our traffic has two-wheelers, autos, cars, buses and trucks as separate things." data-time="60s">
-  <p class="eyebrow">OPERATE mode</p>
-  <h2>Rehearse the day nobody planned for</h2>
-  <div class="cols wide-right">
-    <ul class="pts">
-      <li><span class="mk">A</span><div>Collision blocks an approach<small>watch the queue spill back into the junction behind</small></div></li>
-      <li><span class="mk">B</span><div>Waterlogging with a weight limit<small>speeds drop, buses and trucks barred</small></div></li>
-      <li><span class="mk">C</span><div>Crowd surge on one axis</div></li>
-      <li><span class="mk">D</span><div>A controller fails and gets stuck</div></li>
-    </ul>
-    <svg viewBox="0 0 620 300" role="img" aria-label="Control loop: sense, decide, act, account, recover, then back to sense.">
-      <defs><marker id="a9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
-      <g fill="none" stroke-width="2" class="sl">
-        <rect x="10" y="20" width="250" height="62" rx="8"/>
-        <rect x="10" y="104" width="250" height="62" rx="8"/>
-        <rect x="10" y="188" width="250" height="62" rx="8"/>
-        <rect x="330" y="62" width="250" height="62" rx="8"/>
-        <rect x="330" y="146" width="250" height="62" rx="8"/>
-      </g>
-      <g text-anchor="middle">
-        <text x="135" y="52" class="b ft">Sense</text><text x="135" y="72" class="m fd">queues per approach</text>
-        <text x="135" y="136" class="b ft">Decide</text><text x="135" y="156" class="m fd">extend · switch · hold</text>
-        <text x="135" y="220" class="b ft">Act</text><text x="135" y="240" class="m fd">through the safety limits</text>
-        <text x="455" y="94" class="b ft">Account</text><text x="455" y="114" class="m fd">who paid, in seconds</text>
-        <text x="455" y="178" class="b ft">Recover</text><text x="455" y="198" class="m fd">unstarve the waiting phase</text>
-      </g>
-      <g class="ar" marker-end="url(#a9)">
-        <path d="M 135 86 L 135 100"/><path d="M 135 170 L 135 184"/>
-        <path d="M 264 214 L 300 214 L 300 177 L 326 177"/>
-        <path d="M 455 142 L 455 128"/>
-        <path d="M 330 93 L 296 93 L 296 51 L 264 51"/>
-      </g>
-    </svg>
+<section class="slide" data-time="45s" data-notes="So let me show you what actually runs, because this isn't a concept.
+
+Four junctions. Five vehicle types — two-wheelers, autos, cars, buses, trucks — each with its own length and weight class. Real signal state machines with yellow and all-red intervals. Timing controls. Seeded testing. Four scenarios for the bad day. A priority corridor with a cost ledger. And a written model specification with every constant in it.">
+  <div class="top"><p class="eyebrow good">Running today</p><span class="rubric">FUNCTIONALITY &amp; COMPLETENESS</span></div>
+  <h2>What actually works — not a concept</h2>
+  <div class="fill">
+    <div class="inv">
+      <div><b>Timing control</b><span>per-junction green times, live</span></div>
+      <div><b>Seeded testing</b><span>identical traffic, every run</span></div>
+      <div><b>Five vehicle types</b><span>2w · auto · car · bus · truck, PCU weighted</span></div>
+      <div><b>Signal state machines</b><span>green · yellow · all-red, guarded</span></div>
+      <div><b>Four bad-day scenarios</b><span>accident · flood · surge · failure</span></div>
+      <div><b>Priority corridor</b><span>granted, refused, and priced</span></div>
+      <div><b>Classical controllers</b><span>Webster 1958 · Max-Pressure</span></div>
+      <div><b>AI reasoning layer</b><span>a written reason per decision</span></div>
+      <div><b>Model specification</b><span>every constant and every limitation</span></div>
+    </div>
   </div>
 </section>
 
 <!-- 10 -->
-<section class="slide" data-notes="Here are the same five gaps with our answer next to each one. We are not replacing adaptive control. We are the thing that sits next to it: the place where you try the plan and rehearse the failure before any of it is real." data-time="45s">
-  <p class="eyebrow">How we answer them</p>
-  <h2>Five gaps, five answers</h2>
+<section class="slide" data-time="60s" data-notes="This is average delay per vehicle — the one number that matters.
+
+I'll drag east–west green from eighteen seconds to thirty. Watch east–west drain, and watch north–south start building, because I took those seconds from somewhere.
+
+Now, I could stop there and say it looks better. But that would be a guess. So I press test — and this replays exactly the same traffic, the same vehicles arriving at the same moments, under the new plan. Same cars, different plan. That's the only way to know it was the plan and not the minute.
+
+The table keeps every attempt and marks the best one. That's a planner finding a better timing with evidence, in one minute.">
+  <div class="top"><p class="eyebrow">Demo · the planner</p><span class="rubric">FUNCTIONALITY &amp; COMPLETENESS</span></div>
+  <h2>Change it. Test it. Prove it.</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 320" role="img" aria-label="Five limitations of adaptive control mapped one to one onto what the twin does about each.">
-      <defs><marker id="a10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><polygon class="fa" points="0,0 10,5 0,10"/></marker></defs>
-      <g class="bw">
-        <rect x="0" y="8" width="470" height="48" rx="7"/><rect x="0" y="72" width="470" height="48" rx="7"/>
-        <rect x="0" y="136" width="470" height="48" rx="7"/><rect x="0" y="200" width="470" height="48" rx="7"/>
-        <rect x="0" y="264" width="470" height="48" rx="7"/>
+    <svg viewBox="0 0 1120 280" role="img" aria-label="Five step loop: see the target, change a green, test on identical traffic, read the verdict, keep the best.">
+      <defs><marker id="m10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+      <g fill="none" stroke-width="2">
+        <rect x="10" y="50" width="188" height="98" rx="8" class="sl"/><rect x="238" y="50" width="188" height="98" rx="8" class="sl"/>
+        <rect x="466" y="50" width="188" height="98" rx="8" class="sa" stroke-width="3"/>
+        <rect x="694" y="50" width="188" height="98" rx="8" class="sl"/><rect x="922" y="50" width="188" height="98" rx="8" class="sl"/>
       </g>
-      <g class="ba">
-        <rect x="650" y="8" width="470" height="48" rx="7"/><rect x="650" y="72" width="470" height="48" rx="7"/>
-        <rect x="650" y="136" width="470" height="48" rx="7"/><rect x="650" y="200" width="470" height="48" rx="7"/>
-        <rect x="650" y="264" width="470" height="48" rx="7"/>
+      <g text-anchor="middle">
+        <text x="104" y="38" class="m fa">1</text><text x="332" y="38" class="m fa">2</text><text x="560" y="38" class="m fa">3</text>
+        <text x="788" y="38" class="m fa">4</text><text x="1016" y="38" class="m fa">5</text>
+        <text x="104" y="92" class="b ft">See the target</text><text x="104" y="122" class="m fd">under 15.0s</text>
+        <text x="332" y="92" class="b ft">Change a green</text><text x="332" y="122" class="m fd">E–W 18s → 30s</text>
+        <text x="560" y="92" class="b ft">Test it</text><text x="560" y="122" class="m fd">same cars, same order</text>
+        <text x="788" y="92" class="b ft">Read the verdict</text><text x="788" y="122" class="m fd">better or worse, scored</text>
+        <text x="1016" y="92" class="b ft">Keep the best</text><text x="1016" y="122" class="m fd">revert any time</text>
       </g>
-      <g class="ft">
-        <text x="20" y="39">Hardware costs a fortune</text>
-        <text x="20" y="103">A blocked sensor degrades it</text>
-        <text x="20" y="167">Plan switching wastes time</text>
-        <text x="20" y="231">Rare events are unseen</text>
-        <text x="20" y="295">Mixed traffic breaks counting</text>
-        <text x="670" y="39">Costs a laptop to try a plan</text>
-        <text x="670" y="103">Sensor failure becomes a rehearsal</text>
-        <text x="670" y="167">Test the plan before you switch</text>
-        <text x="670" y="231">Rare events are the main feature</text>
-        <text x="670" y="295">Five vehicle types, PCU weighted</text>
-      </g>
-      <g class="ar sa" marker-end="url(#a10)" stroke-width="2.5">
-        <path d="M 486 32 L 636 32"/><path d="M 486 96 L 636 96"/><path d="M 486 160 L 636 160"/>
-        <path d="M 486 224 L 636 224"/><path d="M 486 288 L 636 288"/>
-      </g>
+      <g class="ar" marker-end="url(#m10)"><path d="M 204 99 L 232 99"/><path d="M 432 99 L 460 99"/><path d="M 660 99 L 688 99"/><path d="M 888 99 L 916 99"/></g>
+      <path d="M 1016 152 C 1016 208, 332 208, 332 152" class="ar sa" marker-end="url(#m10)"/>
+      <text x="674" y="248" class="m fa" text-anchor="middle">the traffic never changes — only the plan does</text>
     </svg>
   </div>
 </section>
 
 <!-- 11 -->
-<section class="slide" data-notes="Now back to where I started. Giving an emergency vehicle a green corridor is not free — everyone on the crossing roads pays for it. That is measured in research papers and invisible in every control room screen we could find. Our twin measures both sides. And when the network was already congested, the next request was refused, and it said why." data-time="70s">
-  <p class="eyebrow good">The part that is ours</p>
-  <h2>Priority has a price. We put it on the screen.</h2>
-  <div class="cols">
+<section class="slide" data-time="60s" data-notes="Now the bad day. Accident — one approach can't discharge. Watch the queue grow backwards until it reaches the junction behind. One incident, three streets.
+
+Flood — this road is waterlogged, speeds drop, and buses and trucks are barred by weight limit. That's why we model five vehicle types and not one.
+
+And now a priority request. Granted — corridor held. Look at the ledger: the vehicle saved this much, cross traffic paid this much. Both sides, measured.
+
+Now I'll push traffic up… and request again. Refused. And it tells me why — the network queue is over budget. A system that can only say yes can't be opened to thousands of cars.">
+  <div class="top"><p class="eyebrow warn">Demo · the bad day</p><span class="rubric">FUNCTIONALITY &amp; COMPLETENESS</span></div>
+  <h2>Break it on purpose, then price the fix</h2>
+  <div class="cols left-narrow">
+    <ul class="pts warn">
+      <li><span class="mk">A</span><div>Accident blocks an approach<small>queue spills back into the junction behind</small></div></li>
+      <li><span class="mk">B</span><div>Waterlogging with a weight limit<small>speeds drop, buses and trucks barred</small></div></li>
+      <li><span class="mk">C</span><div>Surge · signal failure</div></li>
+    </ul>
     <div>
       <div class="ledger">
         <div class="saved"><div class="n">2.9s</div><div class="k">saved by the priority vehicle</div></div>
@@ -366,249 +405,277 @@
       </div>
       <div class="stamp">NEXT REQUEST: REFUSED — network queue above budget</div>
     </div>
-    <svg viewBox="0 0 540 320" role="img" aria-label="Priority request flow: score it, check the budget, check for conflict, then grant, queue or refuse.">
-      <defs><marker id="a11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
-      <rect x="150" y="6" width="240" height="46" rx="7" fill="none" stroke-width="2" class="sa"/>
-      <text x="270" y="35" class="ft" text-anchor="middle">request arrives</text>
-      <rect x="150" y="76" width="240" height="46" rx="7" fill="none" stroke-width="2" class="sl"/>
-      <text x="270" y="105" class="ft" text-anchor="middle">score it — shown, not hidden</text>
-      <path d="M 270 146 L 372 178 L 270 210 L 168 178 Z" fill="none" stroke-width="2" class="sl"/>
-      <text x="270" y="184" class="m ft" text-anchor="middle">budget? conflict?</text>
-      <g class="ar" marker-end="url(#a11)"><path d="M 270 56 L 270 70"/><path d="M 270 126 L 270 142"/></g>
-      <rect x="6" y="252" width="160" height="56" rx="7" fill="none" stroke-width="2.5" class="sg"/>
-      <text x="86" y="278" class="b fg" text-anchor="middle">GRANTED</text><text x="86" y="298" class="m fd" text-anchor="middle">hold the corridor</text>
-      <rect x="190" y="252" width="160" height="56" rx="7" fill="none" stroke-width="2.5" class="sw"/>
-      <text x="270" y="278" class="b fw" text-anchor="middle">QUEUED</text><text x="270" y="298" class="m fd" text-anchor="middle">says what it waits on</text>
-      <rect x="374" y="252" width="160" height="56" rx="7" fill="none" stroke-width="2.5" class="sd"/>
-      <text x="454" y="278" class="b fdg" text-anchor="middle">REFUSED</text><text x="454" y="298" class="m fd" text-anchor="middle">names the budget</text>
-      <g class="ar" marker-end="url(#a11)">
-        <path d="M 200 200 L 86 200 L 86 246"/><path d="M 270 214 L 270 246"/><path d="M 340 200 L 454 200 L 454 246"/>
-      </g>
-    </svg>
   </div>
 </section>
 
 <!-- 12 -->
-<section class="slide" data-notes="Very quickly, how it works. A junction is a scheduler: the four approaches are processes, green time is the CPU, a fixed plan is round robin, maximum green is starvation prevention, and an emergency corridor is preemption. The important box is the red one — every controller writes through one function, and the safety limits sit under it. So no matter what the AI says, it cannot make a light stay red forever." data-time="65s">
-  <p class="eyebrow">How it works</p>
+<section class="slide" data-time="50s" data-notes="Under the hood: a junction is a scheduler. The four approaches are processes, green time is the CPU. A fixed plan is round robin — equal slices whether or not anyone's waiting, which is exactly why it's beatable. Maximum green is starvation prevention. An emergency corridor is preemption.
+
+The important box is the red one. We have four controllers — a fixed plan, Webster's formula, Max-Pressure, and an AI layer — and every one of them writes through a single function, with the safety limits underneath it. Minimum green, maximum green, yellow never skipped. Those are hard-coded and never learned. So whatever the AI says, it cannot make a light stay red forever.">
+  <div class="top"><p class="eyebrow">Architecture</p><span class="rubric">TECHNICAL EXECUTION</span></div>
   <h2>A junction is a scheduler</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 330" role="img" aria-label="Sensor layer feeds the simulation core, four controllers pass through one hard-coded safety layer, the core feeds the display, and offline Python tools supply files.">
+    <svg viewBox="0 0 1120 320" role="img" aria-label="Sensor layer feeds the simulation core; four controllers pass through one hard-coded safety layer; the core feeds the display; offline Python tools supply files.">
       <defs>
-        <marker id="a12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker>
-        <marker id="a12r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="fdg" points="0,0 10,5 0,10"/></marker>
+        <marker id="m12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker>
+        <marker id="m12r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="fdg" points="0,0 10,5 0,10"/></marker>
       </defs>
-      <rect x="0" y="10" width="330" height="60" rx="8" fill="none" stroke-width="2" class="sl" stroke-dasharray="7 6"/>
-      <text x="165" y="38" class="ft" text-anchor="middle">Sensor layer</text>
-      <text x="165" y="60" class="m fd" text-anchor="middle">mocked · swap here for real detectors</text>
+      <rect x="0" y="8" width="330" height="56" rx="8" fill="none" stroke-width="2" class="sl" stroke-dasharray="7 6"/>
+      <text x="165" y="32" class="ft" text-anchor="middle">Sensor layer</text>
+      <text x="165" y="54" class="m fd" text-anchor="middle">mocked · swap here for real data</text>
+      <rect x="0" y="112" width="470" height="88" rx="8" fill="none" stroke-width="3" class="sa"/>
+      <text x="235" y="146" class="b ft" text-anchor="middle">Simulation core</text>
+      <text x="235" y="174" class="m fd" text-anchor="middle">vehicle physics · signal state machines · queues</text>
+      <path d="M 165 68 L 165 106" class="ar" marker-end="url(#m12)"/>
 
-      <rect x="0" y="120" width="480" height="92" rx="8" fill="none" stroke-width="3" class="sa"/>
-      <text x="240" y="156" class="b ft" text-anchor="middle">Simulation core</text>
-      <text x="240" y="182" class="m fd" text-anchor="middle">vehicle physics · signal state machines · queues</text>
-      <path d="M 165 74 L 165 114" class="ar" marker-end="url(#a12)"/>
-
-      <rect x="640" y="10" width="480" height="86" rx="8" fill="none" stroke-width="2" class="sl"/>
-      <text x="880" y="38" class="ft" text-anchor="middle">Controllers</text>
+      <rect x="640" y="8" width="480" height="82" rx="8" fill="none" stroke-width="2" class="sl"/>
+      <text x="880" y="32" class="ft" text-anchor="middle">Controllers</text>
       <g class="m ft" text-anchor="middle">
-        <rect x="662" y="52" width="96" height="30" rx="5" class="bs2"/><text x="710" y="72">Fixed plan</text>
-        <rect x="770" y="52" width="86" height="30" rx="5" class="bs2"/><text x="813" y="72">Webster</text>
-        <rect x="868" y="52" width="126" height="30" rx="5" class="bs2"/><text x="931" y="72">Max-Pressure</text>
-        <rect x="1006" y="52" width="92" height="30" rx="5" class="bs2"/><text x="1052" y="72">AI agent</text>
+        <rect x="662" y="48" width="96" height="28" rx="5" class="bs2"/><text x="710" y="67">Fixed plan</text>
+        <rect x="770" y="48" width="86" height="28" rx="5" class="bs2"/><text x="813" y="67">Webster</text>
+        <rect x="868" y="48" width="126" height="28" rx="5" class="bs2"/><text x="931" y="67">Max-Pressure</text>
+        <rect x="1006" y="48" width="92" height="28" rx="5" class="bs2"/><text x="1052" y="67">AI agent</text>
       </g>
+      <rect x="640" y="124" width="480" height="70" rx="8" fill="none" stroke-width="3" class="sd"/>
+      <text x="880" y="154" class="b fdg" text-anchor="middle">Safety layer — hard-coded, never learned</text>
+      <text x="880" y="180" class="m fd" text-anchor="middle">min green 5s · max green 60s · yellow never skipped</text>
+      <path d="M 880 94 L 880 118" class="ar sd" marker-end="url(#m12r)"/>
+      <path d="M 634 158 L 478 158" class="ar sd" marker-end="url(#m12r)"/>
 
-      <rect x="640" y="132" width="480" height="70" rx="8" fill="none" stroke-width="3" class="sd"/>
-      <text x="880" y="162" class="b fdg" text-anchor="middle">Safety layer — hard-coded, never learned</text>
-      <text x="880" y="188" class="m fd" text-anchor="middle">min green 5s · max green 60s · yellow never skipped</text>
-      <path d="M 880 100 L 880 126" class="ar sd" marker-end="url(#a12r)"/>
-      <path d="M 634 166 L 488 166" class="ar sd" marker-end="url(#a12r)"/>
-
-      <rect x="0" y="252" width="480" height="60" rx="8" fill="none" stroke-width="2" class="sl"/>
-      <text x="240" y="280" class="ft" text-anchor="middle">Display</text>
-      <text x="240" y="302" class="m fd" text-anchor="middle">the only files that draw</text>
-      <path d="M 240 216 L 240 246" class="ar" marker-end="url(#a12)"/>
-
-      <rect x="640" y="240" width="480" height="72" rx="8" fill="none" stroke-width="2" class="sl" stroke-dasharray="7 6"/>
-      <text x="880" y="268" class="ft" text-anchor="middle">Offline tools — Python, never on stage</text>
-      <text x="880" y="292" class="m fd" text-anchor="middle">SUMO validation · training · map import</text>
-      <path d="M 634 276 L 488 276" class="ar" marker-end="url(#a12)" stroke-dasharray="6 5"/>
+      <rect x="0" y="244" width="470" height="58" rx="8" fill="none" stroke-width="2" class="sl"/>
+      <text x="235" y="270" class="ft" text-anchor="middle">Display — the only files that draw</text>
+      <text x="235" y="292" class="m fd" text-anchor="middle">swap for 3D without touching the model</text>
+      <path d="M 235 204 L 235 238" class="ar" marker-end="url(#m12)"/>
+      <rect x="640" y="232" width="480" height="70" rx="8" fill="none" stroke-width="2" class="sl" stroke-dasharray="7 6"/>
+      <text x="880" y="258" class="ft" text-anchor="middle">Offline tools — Python, never on stage</text>
+      <text x="880" y="282" class="m fd" text-anchor="middle">SUMO validation · training · map import</text>
+      <path d="M 634 268 L 478 268" class="ar" marker-end="url(#m12)" stroke-dasharray="6 5"/>
     </svg>
   </div>
 </section>
 
 <!-- 13 -->
-<section class="slide" data-notes="On feasibility: this is not a plan, it runs today. About two thousand lines of plain JavaScript, no install, no licence, no server, no build step. We test it without a browser too — run the same seed twice and you get exactly the same result, which is how we know a comparison is honest. The AI part is optional; if the internet dies the tool still works completely." data-time="50s">
-  <p class="eyebrow good">Feasibility</p>
-  <h2>It runs today, on any laptop</h2>
-  <div class="fill">
-    <div class="stat-row" style="width:100%">
-      <div class="stat"><div class="n">0</div><div class="k">installs, licences, servers, build steps</div><div class="s">open a link — that is the whole setup</div></div>
-      <div class="stat"><div class="n">~2k</div><div class="k">lines of plain JavaScript</div><div class="s">nine small files a judge can read</div></div>
-      <div class="stat"><div class="n">100%</div><div class="k">repeatable — same seed, same result</div><div class="s">verified headless, without a browser</div></div>
-    </div>
-  </div>
-  <p class="foot">The AI layer is optional. No internet — the tool still works, on a rule-based controller.</p>
-</section>
+<section class="slide" data-time="45s" data-notes="The physics: every vehicle follows the one in front, at forty kilometres an hour free speed, one and a half metres per second squared acceleration, a two second following gap, and two seconds of start-up lost time before a stopped queue moves — which is a real measured effect, and leaving it out makes every capacity number too optimistic.
 
-<!-- 14 -->
-<section class="slide" data-notes="Some numbers so this is not just a claim. On identical traffic, a balanced plan gives about sixteen point seven seconds of delay per vehicle. Deliberately skew the same junction and it goes to twenty-one. So the tool shows that timing matters, which is the whole premise. And we do not grade ourselves — we use the profession's own scale, level of service." data-time="45s">
-  <p class="eyebrow">Evidence</p>
-  <h2>Same junction. Same traffic. Only the plan changed.</h2>
+Queues form backwards from the stop line and discharge in a wave at about one vehicle every two seconds — that's the standard saturation flow of eighteen hundred an hour. And we count them in passenger car units, because twelve two-wheelers and twelve buses are not the same junction.">
+  <div class="top"><p class="eyebrow">The model</p><span class="rubric">TECHNICAL EXECUTION</span></div>
+  <h2>How a queue actually forms and clears</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 280" role="img" aria-label="Bar chart: balanced eighteen by eighteen second plan gives 16.7 seconds average delay, skewed twenty-five by eight gives 21.0 seconds, against level of service bands B, C and D.">
-      <rect x="270" y="20" width="180" height="180" class="bg"/>
-      <rect x="450" y="20" width="270" height="180" class="ba"/>
-      <rect x="720" y="20" width="360" height="180" class="bw"/>
-      <text x="360" y="12" class="m fg" text-anchor="middle">LOS B · 10–20s</text>
-      <text x="585" y="12" class="m fa" text-anchor="middle">LOS C · 20–35s</text>
-      <text x="900" y="12" class="m fw" text-anchor="middle">LOS D · 35–55s</text>
-      <line x1="270" y1="200" x2="1080" y2="200" class="sl" stroke-width="2"/>
-      <g class="m fd" text-anchor="middle">
-        <text x="270" y="224">0</text><text x="450" y="224">10</text><text x="630" y="224">20</text>
-        <text x="810" y="224">30</text><text x="990" y="224">40</text>
-        <text x="675" y="256">average delay per vehicle (seconds)</text>
-      </g>
-      <rect x="270" y="46" width="301" height="46" rx="4" class="fg"/>
-      <text x="256" y="76" class="ft" text-anchor="end">Balanced 18s / 18s</text>
-      <text x="587" y="76" class="b fg">16.7s</text>
-      <rect x="270" y="122" width="378" height="46" rx="4" class="fw"/>
-      <text x="256" y="152" class="ft" text-anchor="end">Skewed 25s / 8s</text>
-      <text x="664" y="152" class="b fw">21.0s</text>
+    <svg viewBox="0 0 1120 260" role="img" aria-label="Vehicles of different sizes queued behind a stop line, discharging as a wave two seconds after green at roughly one vehicle every two seconds.">
+      <rect x="0" y="96" width="1120" height="58" class="bs2"/>
+      <rect x="742" y="88" width="5" height="74" class="fd"/>
+      <text x="756" y="82" class="m fd">stop line</text>
+      <circle cx="790" cy="70" r="12" class="fg"/>
+      <text x="812" y="76" class="m fg">green</text>
+
+      <rect x="672" y="112" width="48" height="26" rx="3" class="fa"/><text x="696" y="176" class="m fd" text-anchor="middle">car</text>
+      <rect x="640" y="115" width="22" height="20" rx="3" class="fa"/><text x="651" y="176" class="m fd" text-anchor="middle">2w</text>
+      <rect x="530" y="108" width="100" height="34" rx="3" class="fa"/><text x="580" y="176" class="m fd" text-anchor="middle">bus · 3.0 PCU</text>
+      <rect x="472" y="113" width="48" height="24" rx="3" class="fa"/><text x="496" y="176" class="m fd" text-anchor="middle">auto</text>
+      <rect x="400" y="112" width="60" height="26" rx="3" class="fa"/>
+      <rect x="340" y="112" width="48" height="26" rx="3" class="fa"/>
+
+      <path d="M 662 148 L 672 148" class="ar sw"/>
+      <text x="300" y="70" class="m fd">queue forms backwards from the stop line</text>
+      <path d="M 300 78 L 360 100" class="ar" stroke-width="1.5"/>
+
+      <text x="0" y="214" class="b ft">2 s</text><text x="40" y="214" class="ft">start-up lost time before the first vehicle moves</text>
+      <text x="470" y="214" class="b ft">≈ 1 veh / 2 s</text><text x="610" y="214" class="ft">discharge — 1,800 PCU per hour, the standard saturation flow</text>
+      <text x="0" y="244" class="m fd">Counted in vehicles and in passenger car units: a two-wheeler is 0.25, a bus is 3.0 — twelve of each is not the same junction.</text>
     </svg>
   </div>
 </section>
 
-<!-- 15 -->
-<section class="slide" data-notes="One honest sum. Take a busy junction, two thousand vehicles an hour, save five seconds each. That is nearly three vehicle-hours saved every hour, about thirty-three in a day, at one junction. Bengaluru's system covers a hundred and sixty-five. I am not claiming we deliver that — I am showing why finding five seconds is worth the effort." data-time="35s">
-  <p class="eyebrow">Impact</p>
-  <h2>Why five seconds is worth a day of engineering</h2>
+<!-- 14 -->
+<section class="slide" data-time="40s" data-notes="Two things make the numbers trustworthy.
+
+One, everything is seeded. Run the same seed twice, you get identical results — we test that without a browser at all. So a comparison between two plans is a controlled experiment, which the real road can never be.
+
+Two, validation. Our constants come from standard traffic engineering values, and the next step is cross-checking against SUMO — the standard open research simulator — on the same scenario. I chose to build our own model first because SUMO can't be opened by a control room operator. But SUMO is the right thing to check ourselves against.">
+  <div class="top"><p class="eyebrow">How we know it is right</p><span class="rubric">TECHNICAL EXECUTION</span></div>
+  <h2>A controlled experiment, which the road can never be</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 200" role="img" aria-label="One junction times two thousand vehicles per hour times five seconds saved equals 2.8 vehicle-hours saved every hour, about 33 in a day.">
-      <g fill="none" stroke-width="2" class="sl">
-        <rect x="0" y="30" width="220" height="96" rx="8"/>
-        <rect x="280" y="30" width="220" height="96" rx="8"/>
-        <rect x="560" y="30" width="220" height="96" rx="8"/>
-      </g>
-      <rect x="840" y="20" width="280" height="116" rx="8" class="ba"/>
-      <g text-anchor="middle">
-        <text x="110" y="74" class="b ft">1 junction</text><text x="110" y="102" class="m fd">a busy one</text>
-        <text x="390" y="74" class="b ft">2,000 veh/h</text><text x="390" y="102" class="m fd">typical arterial</text>
-        <text x="670" y="74" class="b ft">5 s saved each</text><text x="670" y="102" class="m fd">one small retiming</text>
-        <text x="980" y="66" class="b fa">2.8 vehicle-hours</text>
-        <text x="980" y="94" class="b fa">every hour</text>
-        <text x="980" y="120" class="m fd">≈ 33 vehicle-hours a day</text>
-      </g>
-      <g class="fa" font-family="var(--mono)" font-size="30" text-anchor="middle">
-        <text x="250" y="88">×</text><text x="530" y="88">×</text><text x="810" y="88">=</text>
-      </g>
-      <text x="0" y="180" class="m fd">Illustrative arithmetic from published volumes — not a measured claim about any deployment.</text>
+    <div class="stat-row">
+      <div class="stat"><div class="n good">Seeded</div><div class="k">Same seed, identical result, every time</div><div class="s">verified headless, no browser needed</div></div>
+      <div class="stat"><div class="n good">Calibrated</div><div class="k">Standard traffic engineering values, all documented</div><div class="s">40 km/h · 1.5 m/s² · 2 s headway · 1,800 PCU/h</div></div>
+      <div class="stat"><div class="n">SUMO</div><div class="k">Cross-validation is the next step</div><div class="s">the right tool to check against — wrong tool for a control room</div></div>
+    </div>
+  </div>
+  <p class="foot">Held constant: the vehicles, their arrival times, their order. Changed: only the plan.</p>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-time="35s" data-notes="Some numbers. Balanced plan, eighteen and eighteen: sixteen point seven seconds of delay per vehicle. Skew the same junction on the same traffic: twenty-one seconds. So timing matters, and the tool proves its own premise.
+
+And we grade on level of service, which is the profession's own scale — not one we invented.">
+  <div class="top"><p class="eyebrow">Evidence</p><span class="rubric">TECHNICAL EXECUTION</span></div>
+  <h2>Same junction, same traffic, only the plan changed</h2>
+  <div class="fill">
+    <svg viewBox="0 0 1120 260" role="img" aria-label="Balanced plan 16.7 seconds average delay, skewed plan 21.0 seconds, against level of service bands.">
+      <rect x="270" y="16" width="180" height="168" class="bg"/><rect x="450" y="16" width="270" height="168" class="ba"/><rect x="720" y="16" width="360" height="168" class="bw"/>
+      <text x="360" y="10" class="m fg" text-anchor="middle">LOS B · 10–20s</text>
+      <text x="585" y="10" class="m fa" text-anchor="middle">LOS C · 20–35s</text>
+      <text x="900" y="10" class="m fw" text-anchor="middle">LOS D · 35–55s</text>
+      <line x1="270" y1="184" x2="1080" y2="184" class="sl" stroke-width="2"/>
+      <g class="m fd" text-anchor="middle"><text x="270" y="208">0</text><text x="450" y="208">10</text><text x="630" y="208">20</text>
+      <text x="810" y="208">30</text><text x="990" y="208">40</text><text x="675" y="240">average control delay per vehicle (seconds)</text></g>
+      <rect x="270" y="40" width="301" height="44" rx="4" class="fg"/>
+      <text x="256" y="70" class="ft" text-anchor="end">Balanced 18s / 18s</text><text x="587" y="70" class="b fg">16.7s</text>
+      <rect x="270" y="114" width="378" height="44" rx="4" class="fw"/>
+      <text x="256" y="144" class="ft" text-anchor="end">Skewed 25s / 8s</text><text x="664" y="144" class="b fw">21.0s</text>
     </svg>
   </div>
 </section>
 
 <!-- 16 -->
-<section class="slide" data-notes="What is done is what I just showed you. Next is many emergency requests competing at the same junction, then coordinating junctions into a green wave, then importing a real Indian junction from OpenStreetMap. Later we cross-check our numbers against SUMO, the standard research simulator." data-time="35s">
-  <p class="eyebrow">Roadmap</p>
-  <h2>What is done, what is next</h2>
-  <div class="fill">
-    <svg viewBox="0 0 1120 260" role="img" aria-label="Roadmap in three bands: done, next, and later.">
-      <defs><marker id="a16" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><polygon class="fa" points="0,0 10,5 0,10"/></marker></defs>
-      <line x1="0" y1="18" x2="1100" y2="18" class="sa" stroke-width="3" marker-end="url(#a16)"/>
-      <rect x="0" y="42" width="352" height="182" rx="10" class="bg"/>
-      <rect x="384" y="42" width="352" height="182" rx="10" fill="none" stroke-width="3" class="sa"/>
-      <rect x="768" y="42" width="352" height="182" rx="10" fill="none" stroke-width="2" class="sl" stroke-dasharray="7 6"/>
-      <text x="24" y="76" class="m fg">DONE — demonstrable today</text>
-      <g class="ft">
-        <text x="24" y="112">timing control · seeded testing</text>
-        <text x="24" y="146">five vehicle types with PCU</text>
-        <text x="24" y="180">incidents · flood · surge · failure</text>
-        <text x="24" y="208" class="m fd">priority receipt · full model spec</text>
-      </g>
-      <text x="408" y="76" class="m fa">NEXT — 30 hours</text>
-      <g class="ft">
-        <text x="408" y="112">many requests competing at once</text>
-        <text x="408" y="146">green-wave coordination</text>
-        <text x="408" y="180">a real junction from OpenStreetMap</text>
-        <text x="408" y="208" class="m fd">cross-check against SUMO</text>
-      </g>
-      <text x="792" y="76" class="m fd">LATER</text>
-      <g class="fd">
-        <text x="792" y="112">quantum-ready phase selection</text>
-        <text x="792" y="146">learned controller</text>
-        <text x="792" y="180">3D view</text>
-        <text x="792" y="208" class="m">planner export</text>
-      </g>
+<section class="slide" data-time="45s" data-notes="Two users, both inside a traffic department.
+
+The planner sits at a desk and decides what normal should look like — thinks in weeks.
+
+The operator is in the control room right now, dealing with the day that isn't normal — thinks in minutes, and today acts by radio.
+
+The next piece of work is their interface: the twin runs alongside real conditions, and when it predicts two priority vehicles converging on one junction, it raises an alert before it happens, offers the operator the options with the cost of each, lets them test one, and logs what was chosen and why. That's the piece we build next, and we'd want to sit in a real control room before designing it.">
+  <div class="top"><p class="eyebrow">Who uses it</p><span class="rubric">REAL WORLD IMPACT</span></div>
+  <h2>The planner, and the operator</h2>
+  <div class="cols">
+    <div>
+      <ul class="pts">
+        <li><span class="mk">PLANNER</span><div>Decides what normal should look like<small>at a desk, thinks in weeks, sets the timing plans</small></div></li>
+        <li><span class="mk">OPERATOR</span><div>Deals with the day that is not normal<small>in the control room, thinks in minutes, today acts by radio</small></div></li>
+      </ul>
+    </div>
+    <svg viewBox="0 0 540 300" role="img" aria-label="The operator console: predict a conflict, alert before it happens, offer priced options, test one, commit and log.">
+      <defs><marker id="m16" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+      <text x="0" y="18" class="m fa">NEXT: THE OPERATOR CONSOLE</text>
+      <rect x="0" y="32" width="540" height="56" rx="8" fill="none" stroke-width="2" class="sw"/>
+      <text x="20" y="56" class="b fw">In 40 s: two priority requests</text>
+      <text x="20" y="78" class="m fd">will need opposite phases at J2</text>
+      <rect x="0" y="108" width="255" height="72" rx="8" fill="none" stroke-width="2" class="sg"/>
+      <text x="16" y="132" class="ft">Serve A first</text>
+      <text x="16" y="154" class="m fd">B waits 22 s · network +180 veh-s</text>
+      <text x="16" y="172" class="m fg">RECOMMENDED</text>
+      <rect x="285" y="108" width="255" height="72" rx="8" fill="none" stroke-width="2" class="sl"/>
+      <text x="301" y="132" class="ft">Serve B first</text>
+      <text x="301" y="154" class="m fd">A waits 31 s · network +260 veh-s</text>
+      <rect x="0" y="200" width="540" height="48" rx="8" fill="none" stroke-width="2" class="sl"/>
+      <text x="16" y="230" class="ft">Do nothing — priced too</text>
+      <text x="0" y="282" class="m fd">Test any option before committing. Every choice logged with its reason.</text>
     </svg>
   </div>
 </section>
 
 <!-- 17 -->
-<section class="slide" data-notes="To finish: signal timing decisions get made every day, and nobody gets to try them first. This is the place to try them. Thank you." data-time="20s">
-  <p class="eyebrow">Close</p>
-  <div class="fill" style="align-items:flex-start;flex-direction:column;justify-content:center;">
-    <p class="quote">Signal timing decisions get made every day,<br>and nobody gets to try them first.<br><span class="em">This is the place to try them.</span></p>
-  </div>
-  <p class="byline">Digital Twin Genesis · thank you</p>
-</section>
+<section class="slide" data-time="35s" data-notes="One honest sum. A busy junction, two thousand vehicles an hour, five seconds saved each. That's two point eight vehicle-hours saved every hour — about thirty-three vehicle-hours a day, at one junction. Bengaluru's system covers a hundred and sixty-five.
 
-<!-- 18 backup -->
-<section class="slide" data-notes="Backup slide. Use only if asked whether this is really a twin." data-time="—">
-  <p class="eyebrow">Backup · if asked “is it really a twin?”</p>
-  <h2>A partial twin, and the app says so</h2>
+I'm not claiming we deliver that. I'm showing why five seconds is worth chasing.
+
+And the cost side: this runs in a browser. For a city that can't afford sensors at every junction, evaluating a timing costs a laptop.">
+  <div class="top"><p class="eyebrow">Impact</p><span class="rubric">REAL WORLD IMPACT</span></div>
+  <h2>Why five seconds is worth chasing</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 280" role="img" aria-label="Three links between the physical junction and the twin: geometry connected, sensor feed mocked, control path not connected.">
-      <defs><marker id="a18" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
-      <rect x="0" y="30" width="330" height="220" rx="10" fill="none" stroke-width="2" class="sl"/>
-      <text x="165" y="18" class="m fd" text-anchor="middle">PHYSICAL JUNCTION</text>
-      <g text-anchor="middle" class="ft">
-        <rect x="24" y="56" width="282" height="52" rx="6" class="bs2"/><text x="165" y="88">road layout and spacing</text>
-        <rect x="24" y="124" width="282" height="52" rx="6" class="bs2"/><text x="165" y="156">detectors and cameras</text>
-        <rect x="24" y="192" width="282" height="52" rx="6" class="bs2"/><text x="165" y="224">the signal controller</text>
+    <svg viewBox="0 0 1120 200" role="img" aria-label="One junction times two thousand vehicles per hour times five seconds equals 2.8 vehicle-hours saved every hour.">
+      <g fill="none" stroke-width="2" class="sl">
+        <rect x="0" y="30" width="220" height="94" rx="8"/><rect x="280" y="30" width="220" height="94" rx="8"/><rect x="560" y="30" width="220" height="94" rx="8"/>
       </g>
-      <rect x="790" y="30" width="330" height="220" rx="10" fill="none" stroke-width="3" class="sa"/>
-      <text x="955" y="18" class="m fa" text-anchor="middle">THE TWIN</text>
-      <g text-anchor="middle" class="ft">
-        <rect x="814" y="56" width="282" height="52" rx="6" class="ba"/><text x="955" y="88">imported geometry</text>
-        <rect x="814" y="124" width="282" height="52" rx="6" class="ba"/><text x="955" y="156">sensor feed, 1 Hz</text>
-        <rect x="814" y="192" width="282" height="52" rx="6" class="ba"/><text x="955" y="224">signal state machines</text>
+      <rect x="840" y="20" width="280" height="114" rx="8" class="ba"/>
+      <g text-anchor="middle">
+        <text x="110" y="72" class="b ft">1 junction</text><text x="110" y="100" class="m fd">a busy one</text>
+        <text x="390" y="72" class="b ft">2,000 veh/h</text><text x="390" y="100" class="m fd">typical arterial</text>
+        <text x="670" y="72" class="b ft">5 s saved each</text><text x="670" y="100" class="m fd">one small retiming</text>
+        <text x="980" y="64" class="b fa">2.8 vehicle-hours</text><text x="980" y="92" class="b fa">every hour</text>
+        <text x="980" y="118" class="m fd">≈ 33 vehicle-hours a day</text>
       </g>
-      <path d="M 336 82 L 784 82" class="ar sg" stroke-width="3" marker-end="url(#a18)"/>
-      <text x="560" y="70" class="m fg" text-anchor="middle">CONNECTED — OpenStreetMap import</text>
-      <path d="M 336 150 L 784 150" class="ar sw" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#a18)"/>
-      <text x="560" y="138" class="m fw" text-anchor="middle">MOCKED — one function is the swap point</text>
-      <path d="M 784 218 L 336 218" class="ar sd" stroke-width="3" stroke-dasharray="2 7" marker-end="url(#a18)"/>
-      <text x="560" y="206" class="m fdg" text-anchor="middle">NOT CONNECTED — NTCIP 1211 adapter</text>
+      <g class="fa" font-family="var(--mono)" font-size="30" text-anchor="middle"><text x="250" y="86">×</text><text x="530" y="86">×</text><text x="810" y="86">=</text></g>
+      <text x="0" y="176" class="m fd">Illustrative arithmetic from published volumes — not a measured claim. Bengaluru's adaptive system covers about 165 junctions.</text>
     </svg>
   </div>
 </section>
 
-<!-- 19 backup -->
-<section class="slide" data-notes="Backup slide. Use if asked how the signal logic is structured, or what stops the AI doing something dangerous." data-time="—">
-  <p class="eyebrow">Backup · the signal logic</p>
+<!-- 18 -->
+<section class="slide" data-time="35s" data-notes="What's next, in order. Many priority requests competing at once. Green-wave coordination between junctions. Importing a real junction from OpenStreetMap. Cross-validation against SUMO.
+
+After that, the neural network — and to be precise about it, it doesn't drive the signals and it doesn't make the simulation accurate. It learns the ranking: which request wins. It gets trained inside this simulator, because you can't train a controller on a real city where the failures are real. And the safety limits stay hard-coded underneath it.
+
+And choosing phases across several junctions under conflict constraints is a combinatorial problem that maps to a QUBO — the form quantum annealers take. There's published work doing exactly that. So the formulation is quantum-ready; we solve it classically today. I'd rather say that than call it quantum.">
+  <div class="top"><p class="eyebrow">Roadmap</p><span class="rubric">INNOVATION · IMPACT</span></div>
+  <h2>What is next, and what it is honestly for</h2>
+  <div class="fill">
+    <div style="width:100%">
+      <ul class="pts good">
+        <li><span class="mk">NEXT</span><div>Many priority requests at once · green-wave coordination · a real junction from OpenStreetMap · SUMO cross-validation</div></li>
+        <li><span class="mk">NN</span><div>A neural network that learns <b>ranking</b>, not safety<small>trained inside this simulator, because you cannot train a controller on a real city. It does not drive the signals and it does not make the simulation accurate — calibration does that.</small></div></li>
+        <li><span class="mk">QUBO</span><div>Phase choice under conflict constraints maps to a QUBO<small>the form quantum annealers take, with published traffic work behind it. Quantum-ready formulation, solved classically today.</small></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide" data-time="20s" data-notes="What we're honest about: no route choice, no turning movements, no pedestrians, and it hasn't been validated against field data yet. All of it is written down in our model specification rather than left for you to find.
+
+Traffic decisions get made every day with no way to try them first. This is the place to try them. Thank you.">
+  <div class="top"><p class="eyebrow">Close</p><span class="rubric">PRESENTATION</span></div>
+  <div class="fill" style="flex-direction:column;align-items:flex-start;justify-content:center;">
+    <p class="quote">Traffic decisions get made every day,<br>and nobody gets to try them first.<br><span class="em">This is the place to try them.</span></p>
+    <p class="foot" style="margin-top:26px">Honest about what is missing: no route choice · no turning movements · no pedestrians · not yet validated against field data — all listed in the model specification.</p>
+  </div>
+  <p class="byline">Digital Twin Genesis · part of Project Kalavathi · thank you</p>
+</section>
+
+<!-- 20 backup -->
+<section class="slide" data-time="—" data-notes="Backup. Use only if asked whether this is really a twin.">
+  <div class="top"><p class="eyebrow">Backup · “is it really a twin?”</p><span class="rubric">BACKUP</span></div>
+  <h2>A partial twin, and the app says so</h2>
+  <div class="fill">
+    <svg viewBox="0 0 1120 260" role="img" aria-label="Geometry connected, sensor feed mocked, control path not connected.">
+      <defs><marker id="m20" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+      <rect x="0" y="24" width="320" height="212" rx="10" fill="none" stroke-width="2" class="sl"/>
+      <text x="160" y="14" class="m fd" text-anchor="middle">PHYSICAL JUNCTION</text>
+      <g text-anchor="middle" class="ft">
+        <rect x="22" y="48" width="276" height="48" rx="6" class="bs2"/><text x="160" y="78">road layout and spacing</text>
+        <rect x="22" y="112" width="276" height="48" rx="6" class="bs2"/><text x="160" y="142">detectors and cameras</text>
+        <rect x="22" y="176" width="276" height="48" rx="6" class="bs2"/><text x="160" y="206">the signal controller</text>
+      </g>
+      <rect x="800" y="24" width="320" height="212" rx="10" fill="none" stroke-width="3" class="sa"/>
+      <text x="960" y="14" class="m fa" text-anchor="middle">THE TWIN</text>
+      <g text-anchor="middle" class="ft">
+        <rect x="822" y="48" width="276" height="48" rx="6" class="ba"/><text x="960" y="78">imported geometry</text>
+        <rect x="822" y="112" width="276" height="48" rx="6" class="ba"/><text x="960" y="142">sensor feed, 1 Hz</text>
+        <rect x="822" y="176" width="276" height="48" rx="6" class="ba"/><text x="960" y="206">signal state machines</text>
+      </g>
+      <path d="M 326 72 L 794 72" class="ar sg" stroke-width="3" marker-end="url(#m20)"/>
+      <text x="560" y="62" class="m fg" text-anchor="middle">CONNECTED — OpenStreetMap import</text>
+      <path d="M 326 136 L 794 136" class="ar sw" stroke-width="3" stroke-dasharray="8 6" marker-end="url(#m20)"/>
+      <text x="560" y="126" class="m fw" text-anchor="middle">MOCKED — one function is the swap point</text>
+      <path d="M 794 200 L 326 200" class="ar sd" stroke-width="3" stroke-dasharray="2 7" marker-end="url(#m20)"/>
+      <text x="560" y="190" class="m fdg" text-anchor="middle">NOT CONNECTED — NTCIP 1211 adapter</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 21 backup -->
+<section class="slide" data-time="—" data-notes="Backup. Use if asked about the signal logic, or what stops the AI doing something dangerous.">
+  <div class="top"><p class="eyebrow">Backup · signal logic</p><span class="rubric">BACKUP</span></div>
   <h2>Round robin with a starvation ceiling</h2>
   <div class="fill">
-    <svg viewBox="0 0 1120 260" role="img" aria-label="Signal cycles from north-south green through yellow and all-red to east-west green and back, with controller actions only allowed at green.">
-      <defs><marker id="a19" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
+    <svg viewBox="0 0 1120 250" role="img" aria-label="North-south green to yellow to all red to east-west green and back, with controller actions only allowed at green.">
+      <defs><marker id="m21" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon class="ah" points="0,0 10,5 0,10"/></marker></defs>
       <g fill="none" stroke-width="3">
-        <rect x="0" y="86" width="190" height="76" rx="10" class="sg"/>
-        <rect x="240" y="86" width="150" height="76" rx="10" class="sw"/>
-        <rect x="440" y="86" width="150" height="76" rx="10" class="sd"/>
-        <rect x="640" y="86" width="190" height="76" rx="10" class="sg"/>
-        <rect x="880" y="86" width="150" height="76" rx="10" class="sw"/>
+        <rect x="0" y="82" width="190" height="72" rx="10" class="sg"/><rect x="240" y="82" width="150" height="72" rx="10" class="sw"/>
+        <rect x="440" y="82" width="150" height="72" rx="10" class="sd"/><rect x="640" y="82" width="190" height="72" rx="10" class="sg"/>
+        <rect x="880" y="82" width="150" height="72" rx="10" class="sw"/>
       </g>
       <g text-anchor="middle">
-        <text x="95" y="122" class="b ft">NS GREEN</text><text x="95" y="146" class="m fd">north + south</text>
-        <text x="315" y="122" class="b ft">YELLOW</text><text x="315" y="146" class="m fd">3.0 s</text>
-        <text x="515" y="122" class="b ft">ALL RED</text><text x="515" y="146" class="m fd">1.0 s</text>
-        <text x="735" y="122" class="b ft">EW GREEN</text><text x="735" y="146" class="m fd">east + west</text>
-        <text x="955" y="122" class="b ft">YELLOW</text><text x="955" y="146" class="m fd">3.0 s</text>
+        <text x="95" y="116" class="b ft">NS GREEN</text><text x="95" y="140" class="m fd">north + south</text>
+        <text x="315" y="116" class="b ft">YELLOW</text><text x="315" y="140" class="m fd">3.0 s</text>
+        <text x="515" y="116" class="b ft">ALL RED</text><text x="515" y="140" class="m fd">1.0 s</text>
+        <text x="735" y="116" class="b ft">EW GREEN</text><text x="735" y="140" class="m fd">east + west</text>
+        <text x="955" y="116" class="b ft">YELLOW</text><text x="955" y="140" class="m fd">3.0 s</text>
       </g>
-      <g class="ar" marker-end="url(#a19)">
-        <path d="M 196 124 L 234 124"/><path d="M 396 124 L 434 124"/>
-        <path d="M 596 124 L 634 124"/><path d="M 836 124 L 874 124"/>
-      </g>
-      <path d="M 955 168 C 955 216, 95 216, 95 168" class="ar" marker-end="url(#a19)"/>
-      <rect x="0" y="16" width="830" height="48" rx="8" class="ba"/>
-      <text x="20" y="46" class="m ft">Controllers may only: extend (+4s, never past 60s) · switch (never before 5s) · hold</text>
+      <g class="ar" marker-end="url(#m21)"><path d="M 196 118 L 234 118"/><path d="M 396 118 L 434 118"/><path d="M 596 118 L 634 118"/><path d="M 836 118 L 874 118"/></g>
+      <path d="M 955 160 C 955 208, 95 208, 95 160" class="ar" marker-end="url(#m21)"/>
+      <rect x="0" y="14" width="830" height="46" rx="8" class="ba"/>
+      <text x="18" y="43" class="m ft">Controllers may only: extend (+4s, never past 60s) · switch (never before 5s) · hold</text>
     </svg>
   </div>
 </section>
@@ -616,56 +683,39 @@
 </div></div>
 
 <div id="bar"><i></i></div>
-<div id="hud">1 / 19</div>
-<div id="help">← → move · N notes · F full screen · P print to PDF</div>
+<div id="hud">1 / 21</div>
+<div id="help">← → move · N notes · F full screen · Ctrl+P export PDF</div>
 <div id="notes"><h4>Speaker notes <span class="time"></span></h4><p></p></div>
 
 <script>
 (function(){
-  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
-  var stage = document.getElementById('stage');
-  var hud = document.getElementById('hud');
-  var barFill = document.querySelector('#bar i');
-  var notes = document.getElementById('notes');
-  var notesText = notes.querySelector('p');
-  var notesTime = notes.querySelector('.time');
-  var i = 0;
-
-  function fit(){
-    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
-    stage.style.transform = 'scale(' + s + ')';
-  }
-
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var stage=document.getElementById('stage'),hud=document.getElementById('hud');
+  var barFill=document.querySelector('#bar i'),notes=document.getElementById('notes');
+  var notesText=notes.querySelector('p'),notesTime=notes.querySelector('.time');
+  var i=0;
+  function fit(){stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';}
   function show(n){
-    i = Math.max(0, Math.min(slides.length - 1, n));
-    slides.forEach(function(s, k){ s.classList.toggle('on', k === i); });
-    hud.textContent = (i + 1) + ' / ' + slides.length;
-    barFill.style.width = ((i + 1) / slides.length * 100) + '%';
-    notesText.textContent = slides[i].dataset.notes || '';
-    notesTime.textContent = slides[i].dataset.time ? '· ' + slides[i].dataset.time : '';
-    try { localStorage.setItem('dtg-deck-slide', String(i)); } catch(e){}
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(s,k){s.classList.toggle('on',k===i);});
+    hud.textContent=(i+1)+' / '+slides.length;
+    barFill.style.width=((i+1)/slides.length*100)+'%';
+    notesText.textContent=slides[i].dataset.notes||'';
+    notesTime.textContent=slides[i].dataset.time?'· '+slides[i].dataset.time:'';
+    try{localStorage.setItem('dtg-deck-slide',String(i));}catch(e){}
   }
-
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown'){ e.preventDefault(); show(i + 1); }
-    else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); show(i - 1); }
-    else if (e.key === 'Home'){ show(0); }
-    else if (e.key === 'End'){ show(slides.length - 1); }
-    else if (e.key === 'n' || e.key === 'N'){ notes.classList.toggle('on'); }
-    else if (e.key === 'f' || e.key === 'F'){
-      if (document.fullscreenElement) document.exitFullscreen();
-      else document.documentElement.requestFullscreen();
-    }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();show(i+1);}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();show(i-1);}
+    else if(e.key==='Home'){show(0);} else if(e.key==='End'){show(slides.length-1);}
+    else if(e.key==='n'||e.key==='N'){notes.classList.toggle('on');}
+    else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
   });
-
-  document.getElementById('viewport').addEventListener('click', function(e){
-    show(e.clientX < window.innerWidth * 0.25 ? i - 1 : i + 1);
+  document.getElementById('viewport').addEventListener('click',function(e){
+    show(e.clientX<window.innerWidth*0.25?i-1:i+1);
   });
-
-  window.addEventListener('resize', fit);
-  fit();
-  var start = 0;
-  try { start = parseInt(localStorage.getItem('dtg-deck-slide') || '0', 10) || 0; } catch(e){}
+  window.addEventListener('resize',fit); fit();
+  var start=0; try{start=parseInt(localStorage.getItem('dtg-deck-slide')||'0',10)||0;}catch(e){}
   show(start);
 })();
 </script>
