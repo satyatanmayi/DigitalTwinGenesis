@@ -37,10 +37,9 @@ const SCENARIOS = (function () {
   function clearAll() {
     SIM.conditions.blockedApproaches = {};
     SIM.conditions.floodedRoads = {};
-    SIM.conditions.priorityHold = null;
+    SIM.conditions.priorityHolds = [];
     for (const sp of SIM.spawnPoints()) sp.weight = 1;
-    active = null;
-    tracked = null;
+    PRIORITY.reset();
     note('scenario', 'Normal conditions restored.');
   }
 
@@ -96,110 +95,30 @@ const SCENARIOS = (function () {
   }
 
   /* ------------------------------------------------------- priority corridor
-   * A verified priority request arrives from an external source. Verification
-   * itself is out of scope for this tool: what is modelled here is what the
-   * network does with a request once it believes it — arbitrate, grant or
-   * refuse, hold the corridor, and account for the cost.
+   * Arbitration lives in priority.js now, because one corridor at a time was
+   * never the real problem. These functions stay as the demo entry points.
    */
 
   function requestCorridor(axis) {
-    axis = axis || 'EW';
-    const phase = (axis === 'NS') ? 'NS' : 'EW';
-
-    // ---- admission control ----
-    if (active && active.until > SIM.time()) {
-      SIM.stats.priorityLedger.refusals++;
-      note('refused', 'Priority request REFUSED: a corridor is already running. ' +
-        'Concurrent corridors are capped at ' + ADMISSION.maxConcurrent + '.');
-      return false;
-    }
-    const q = SIM.totalQueue();
-    if (q > ADMISSION.queueBudgetPcu) {
-      SIM.stats.priorityLedger.refusals++;
-      note('refused', 'Priority request REFUSED: network queue is ' + q +
-        ' vehicles, above the ' + ADMISSION.queueBudgetPcu +
-        ' budget. Granting it now would cost more than it saves.');
-      return false;
-    }
-
-    const route = SIM.junctions.map(function (j) { return j.id; });
-    active = { route: route, phase: phase, until: SIM.time() + ADMISSION.holdSeconds };
-    SIM.conditions.priorityHold = {
-      junctionIds: route, phase: phase, until: active.until
-    };
-    SIM.stats.priorityLedger.active = true;
-    SIM.stats.priorityLedger.grants++;
-    SIM.stats.priorityLedger.crossVehSec = 0;
-
-    spawnPriorityVehicle(axis);
-    note('granted', 'Priority corridor GRANTED on the ' + axis + ' axis for ' +
-      ADMISSION.holdSeconds + 's across ' + route.length + ' junctions.');
-    return true;
+    const req = PRIORITY.submit({ axis: axis || 'EW' });
+    note(req.state === 'granted' ? 'granted' : (req.state === 'refused' ? 'refused' : 'scenario'),
+      req.id + ' ' + req.state.toUpperCase() + (req.reason ? ' — ' + req.reason : ''));
+    return req.state === 'granted';
   }
 
-  function spawnPriorityVehicle(axis) {
-    const dir = (axis === 'NS') ? 'S' : 'E';
-    const points = SIM.spawnPoints().filter(function (sp) { return sp.dir === dir; });
-    if (!points.length) return;
-    const sp = points[0];
-    const type = SIM.VEHICLE_TYPES[2];   // car-sized
-    const s = (dir === 'E') ? sp.x : (dir === 'S' ? sp.y : -sp.x);
-    const v = {
-      id: 90000 + Math.floor(Math.random() * 9999),
-      type: type, dir: sp.dir, lane: sp.lane, road: sp.road,
-      lat: sp.lat, s: s, x: sp.x, y: sp.y,
-      speed: type.maxSpeed * 0.9, waitTime: 0, travelled: 0,
-      bornAt: SIM.time(), priority: true, passed: {}
-    };
-    SIM.vehicles.push(v);
-    // The comparison is against ordinary vehicles finishing in the SAME window,
-    // not against a historical average — same traffic, same conditions.
-    tracked = {
-      ref: v, bornAt: v.bornAt,
-      atStart: { processed: SIM.stats.processed, delaySum: SIM.stats.delaySum },
-      fallback: SIM.avgDelay()
-    };
+  /** The headline case: two ambulances, one junction, opposite phases. */
+  function twoAmbulances() {
+    const pair = PRIORITY.demoConflict();
+    note('incident', 'Two priority requests inbound on crossing roads: ' +
+      pair[0].id + ' in ' + pair[0].etaSec.toFixed(0) + 's and ' +
+      pair[1].id + ' in ' + pair[1].etaSec.toFixed(0) + 's. Only one can be served.');
+    return pair;
   }
-
-  /* ---- per-tick bookkeeping: close the corridor, settle the ledger ---- */
-  SIM.onTick(function () {
-    if (active && active.until <= SIM.time()) {
-      SIM.conditions.priorityHold = null;
-      SIM.stats.priorityLedger.active = false;
-      active = null;
-    }
-    if (tracked) {
-      const stillHere = SIM.vehicles.indexOf(tracked.ref) !== -1;
-      if (stillHere) {
-        tracked.travelled = tracked.ref.travelled;
-        tracked.elapsed = SIM.time() - tracked.bornAt;
-      } else {
-        const freeFlow = (tracked.travelled || 0) / SIM.VEHICLE_TYPES[2].maxSpeed;
-        const actualDelay = Math.max(0, (tracked.elapsed || 0) - freeFlow);
-        // Baseline: the delay ordinary vehicles took on the same network while
-        // this trip was running. Same traffic, same conditions, same window.
-        const doneN = SIM.stats.processed - tracked.atStart.processed;
-        const doneD = SIM.stats.delaySum - tracked.atStart.delaySum;
-        const baseline = doneN > 3 ? (doneD / doneN) : tracked.fallback;
-        tracked.baseline = baseline;
-        const saved = Math.max(0, baseline - actualDelay);
-        SIM.stats.priorityLedger.savedSec = saved;
-        lastCompleted = {
-          savedSec: saved,
-          crossVehSec: SIM.stats.priorityLedger.crossVehSec,
-          at: SIM.time()
-        };
-        note('ledger', 'Corridor complete. Priority vehicle saved ' + saved.toFixed(1) +
-          's against the ' + (tracked.baseline || 0).toFixed(1) +
-          's an ordinary vehicle was losing. Cross traffic paid ' +
-          SIM.stats.priorityLedger.crossVehSec.toFixed(0) + ' vehicle-seconds.');
-        tracked = null;
-      }
-    }
-  });
 
   return {
-    ADMISSION: ADMISSION,
+    ADMISSION: { get holdSeconds() { return PRIORITY.POLICY.holdSeconds; },
+                 get maxConcurrent() { return PRIORITY.POLICY.maxConcurrent; },
+                 get queueBudgetPcu() { return PRIORITY.POLICY.queueBudgetPcu; } },
     log: log,
     clearAll: clearAll,
     accident: accident,
@@ -209,9 +128,23 @@ const SCENARIOS = (function () {
     surge: surge,
     signalFailure: signalFailure,
     requestCorridor: requestCorridor,
-    isCorridorActive: function () { return !!(active && active.until > SIM.time()); },
-    corridorRemaining: function () { return active ? Math.max(0, active.until - SIM.time()) : 0; },
-    lastCompleted: function () { return lastCompleted; },
-    trackedVehicle: function () { return tracked ? tracked.ref : null; }
+    twoAmbulances: twoAmbulances,
+    isCorridorActive: function () { return PRIORITY.active().length > 0; },
+    corridorRemaining: function () {
+      const holds = SIM.activeHolds();
+      if (!holds.length) return 0;
+      let m = 0;
+      for (const h of holds) m = Math.max(m, h.until - SIM.time());
+      return m;
+    },
+    lastCompleted: function () {
+      const done = PRIORITY.requests.filter(function (r) { return r.state === 'completed' && r.actual; });
+      return done.length ? done[done.length - 1].actual : null;
+    },
+    trackedVehicle: function () {
+      const live = PRIORITY.active();
+      for (const r of live) if (r.vehicle && SIM.vehicles.indexOf(r.vehicle) !== -1) return r.vehicle;
+      return null;
+    }
   };
 })();

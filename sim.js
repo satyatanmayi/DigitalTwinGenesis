@@ -78,6 +78,8 @@ const SIM = (function () {
     extendStep: 4        // seconds added by one extend_green_* action
   };
 
+  const RECOVERY_BIAS_SEC = 12;   // how long a starved phase is favoured after a hold
+
   const AXIS = { E: { x: 1, y: 0 }, W: { x: -1, y: 0 }, S: { x: 0, y: 1 }, N: { x: 0, y: -1 } };
   const OPPOSITE = { E: 'W', W: 'E', N: 'S', S: 'N' };
   const DIRS = ['N', 'S', 'E', 'W'];
@@ -122,12 +124,14 @@ const SIM = (function () {
   const conditions = {
     blockedApproaches: {},   // "J2:N" -> true   (approach cannot discharge)
     floodedRoads: {},        // "row0" / "col1" -> { speedFactor, barHeavy }
-    priorityHold: null       // { junctionIds:[], phase:'EW', until: simTime }
+    priorityHolds: []        // [{ id, junctionIds:[], phase:'EW', until }] — several
+                             // corridors can run at once; priority.js owns them
   };
 
   const stats = {
     processed: 0, delaySum: 0, stopDelaySum: 0, spawned: 0, blockedSpawns: 0,
-    priorityLedger: { active: false, savedSec: 0, crossVehSec: 0, grants: 0, refusals: 0 }
+    priorityLedger: { active: false, savedSec: 0, crossVehSec: 0, grants: 0, refusals: 0,
+                      costByRequest: {} }   // requestId -> vehicle-seconds paid so far
   };
 
   /* Rolling series for the charts: one sample per simulated second. */
@@ -152,7 +156,9 @@ const SIM = (function () {
         lastAction: null,
         lastReason: 'Fixed-time plan running.',
         lastSource: 'plan',
-        lastDecisionAt: 0
+        lastDecisionAt: 0,
+        recoveryBias: 0,        // seconds of bias left after a priority hold
+        starvedPhase: null      // the phase that waited during the hold
       };
     });
     // Offsets stagger the start of the first green, exactly as coordination does.
@@ -232,12 +238,24 @@ const SIM = (function () {
 
   function updateSignals(dt) {
     for (const j of junctions) {
-      // A priority hold freezes the requested phase green for its window.
-      const hold = conditions.priorityHold;
-      if (hold && hold.until > simTime && hold.junctionIds.indexOf(j.id) !== -1) {
+      // A priority hold freezes the requested phase green for its window. Several
+      // holds may be active; the first one that names this junction wins, and
+      // priority.js guarantees it never grants two holds needing opposite
+      // phases at the same junction.
+      const hold = holdFor(j.id);
+      if (hold) {
         if (j.phase !== hold.phase) {
           if (j.state === 'green' && j.greenElapsed >= SIGNAL.minGreen) { j.timer = 0.01; }
         } else if (j.state === 'green') {
+          j.timer = Math.max(j.timer, 1.0);
+          j.greenElapsed = Math.min(j.greenElapsed, SIGNAL.maxGreen - 1);
+        }
+      } else if (j.recoveryBias > 0) {
+        // After a hold ends, favour the phase that was starved. The preemption
+        // literature is explicit that the exit strategy decides how much
+        // coordination the corridor destroys.
+        j.recoveryBias -= dt;
+        if (j.phase === j.starvedPhase && j.state === 'green') {
           j.timer = Math.max(j.timer, 1.0);
           j.greenElapsed = Math.min(j.greenElapsed, SIGNAL.maxGreen - 1);
         }
@@ -257,6 +275,29 @@ const SIM = (function () {
         j.cycles++;
         j.timer = greenFor(j, j.phase);
       }
+    }
+  }
+
+  /** The active hold covering this junction, or null. */
+  function holdFor(junctionId) {
+    for (const h of conditions.priorityHolds) {
+      if (h.until > simTime && h.junctionIds.indexOf(junctionId) !== -1) return h;
+    }
+    return null;
+  }
+
+  /** Drop holds whose window has closed, and start the recovery bias. */
+  function expireHolds() {
+    for (let i = conditions.priorityHolds.length - 1; i >= 0; i--) {
+      const h = conditions.priorityHolds[i];
+      if (h.until > simTime) continue;
+      for (const id of h.junctionIds) {
+        const j = junctionById(id);
+        if (!j) continue;
+        j.starvedPhase = (h.phase === 'NS') ? 'EW' : 'NS';
+        j.recoveryBias = RECOVERY_BIAS_SEC;
+      }
+      conditions.priorityHolds.splice(i, 1);
     }
   }
 
@@ -419,11 +460,16 @@ const SIM = (function () {
         if (v.speed < QUEUE_SPEED) {
           j.queues[approach]++;
           j.pcuQueues[approach] += v.type.pcu;
-          // Cross-traffic seconds paid while a priority hold is running.
-          const hold = conditions.priorityHold;
-          if (hold && hold.until > simTime && hold.junctionIds.indexOf(j.id) !== -1) {
+          // Cross-traffic seconds paid while a priority hold is running, charged
+          // to the request that caused it.
+          const hold = holdFor(j.id);
+          if (hold) {
             const served = (hold.phase === 'NS') ? ['N', 'S'] : ['E', 'W'];
-            if (served.indexOf(approach) === -1) stats.priorityLedger.crossVehSec += dt;
+            if (served.indexOf(approach) === -1) {
+              stats.priorityLedger.crossVehSec += dt;
+              const by = stats.priorityLedger.costByRequest;
+              by[hold.id] = (by[hold.id] || 0) + dt;
+            }
           }
         }
         if (v.waitTime > j.longestWait[approach]) j.longestWait[approach] = v.waitTime;
@@ -476,6 +522,7 @@ const SIM = (function () {
   /* --------------------------------------------------------------- main clock */
   function step(dt) {
     simTime += dt;
+    expireHolds();
     updateSignals(dt);
     updateSpawns(dt);
     updateVehicles(dt);
@@ -514,13 +561,14 @@ const SIM = (function () {
     simTime = 0;
     stats.processed = 0; stats.delaySum = 0; stats.stopDelaySum = 0;
     stats.spawned = 0; stats.blockedSpawns = 0;
-    stats.priorityLedger = { active: false, savedSec: 0, crossVehSec: 0, grants: 0, refusals: 0 };
+    stats.priorityLedger = { active: false, savedSec: 0, crossVehSec: 0, grants: 0,
+                             refusals: 0, costByRequest: {} };
     series.t = []; series.avgDelay = []; series.totalQueue = []; series.throughput = [];
     seriesAcc = 0; windowCompleted = 0; windowDelay = 0; windowThroughput = 0;
     if (!opts.keepConditions) {
       conditions.blockedApproaches = {};
       conditions.floodedRoads = {};
-      conditions.priorityHold = null;
+      conditions.priorityHolds = [];
       for (const sp of spawnPoints) sp.weight = 1;
     }
     buildJunctions();
@@ -564,6 +612,16 @@ const SIM = (function () {
 
     junctionById: junctionById,
     signalFor: signalFor,
+    holdFor: holdFor,
+    /** Called only by priority.js. Adds a corridor hold. */
+    addPriorityHold: function (id, junctionIds, phase, seconds) {
+      conditions.priorityHolds.push({ id: id, junctionIds: junctionIds.slice(),
+                                      phase: phase, until: simTime + seconds });
+    },
+    clearPriorityHold: function (id) {
+      conditions.priorityHolds = conditions.priorityHolds.filter(function (h) { return h.id !== id; });
+    },
+    activeHolds: function () { return conditions.priorityHolds.filter(function (h) { return h.until > simTime; }); },
     applyAction: applyAction,
     cycleLength: cycleLength,
 
