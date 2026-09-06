@@ -265,7 +265,13 @@
 </div>
 
 <!-- load order: state, then data, then control, then the two renderers -->
-<script src="config.js"></script>
+<!-- config.js holds the API key and is git-ignored, so it does not exist on a
+     public deployment. That is deliberate: a key in client-side JavaScript is a
+     key you have given away. Without it the language-model layer falls back to
+     its local rule and says so on screen. onerror keeps the console clean when
+     the file is legitimately absent. -->
+<script>window.CONFIG = window.CONFIG || {};</script>
+<script src="config.js" onerror="void 0"></script>
 <script src="link.js"></script>
 <script src="sim.js"></script>
 <script src="features.js"></script>
