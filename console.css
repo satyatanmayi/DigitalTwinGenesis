@@ -302,3 +302,190 @@ button.primary {
   color: var(--text);
 }
 .link-help[hidden] { display: none; }
+
+/* ===========================================================================
+   CONTROL ROOM — visual language
+   ===========================================================================
+   Brought onto the same typography and palette as the deck: Archivo for
+   display, IBM Plex Sans for body, IBM Plex Mono for anything a machine
+   produced. The old screen used one system font at one weight for everything,
+   which is why it read as a debug page rather than a room somebody works in.
+
+   The rules underneath are unchanged; this is the layer on top of them.
+   Meaning is carried by position and by a left border, never by colour alone.
+   =========================================================================== */
+:root {
+  --bg:       #0A0E15;
+  --panel:    #131A24;
+  --panel-2:  #1B2430;
+  --line:     #2B3745;
+  --text:     #E8EFF8;
+  --dim:      #8FA2B8;
+
+  --display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --font:    "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:    "IBM Plex Mono", "Cascadia Mono", Consolas, monospace;
+}
+
+body { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+
+/* Display type: headlines are the thing you read from across a room. */
+h1, .alert h1, .plan h1 {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1.12;
+  letter-spacing: -.02em;
+  text-wrap: balance;
+}
+h2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* Tags read as machine output, so they are mono and spaced. */
+.tag, .countdown {
+  font-family: var(--mono);
+  letter-spacing: .16em;
+  font-weight: 500;
+}
+.countdown { font-size: 15px; color: var(--dim); }
+
+/* Cards: one radius, one border weight, meaning on the left edge only. */
+.alert, .plan, .conditions, .panel, .jn, .plan-option, .cond {
+  border-radius: 12px;
+}
+
+/* The junction cards are the thing an operator scans, so give them room. */
+.jn { background: var(--panel); border: 1px solid var(--line); }
+.jn-id { font-family: var(--mono); letter-spacing: .06em; }
+.arm b, .po-row b, .k-value { font-variant-numeric: tabular-nums; }
+
+/* Big numbers in the display face, like the deck. */
+.k-value, .po-head b { font-family: var(--display); font-weight: 700; }
+
+/* --- the decision, after it is made ------------------------------------
+   Stopped and ran must not look the same. Stopped is amber because nothing
+   was taken from anybody and two ambulances are waiting; ran is green
+   because somebody is moving and the price is on screen. */
+.plan.stopped { background: var(--warn-bg); border-color: var(--warn); }
+.plan.stopped .plan-head .tag { background: var(--warn); color: #241800; }
+.plan.ran { background: var(--good-bg); border-color: var(--good); }
+.plan.ran .plan-head .tag { background: var(--good); color: #06241B; }
+
+.plan-option.served  { border-color: var(--good); box-shadow: inset 3px 0 0 var(--good); }
+.plan-option.waiting { border-color: var(--warn); box-shadow: inset 3px 0 0 var(--warn); }
+.plan-option.served  .po-verdict { color: var(--good); }
+.plan-option.waiting .po-verdict { color: var(--warn); }
+
+/* A waiting ambulance's clock should be impossible to miss. */
+.plan-option.waiting .po-row b { color: var(--warn); font-size: 15px; }
+.plan-option.served  .po-row b { color: var(--good); }
+
+.plan-actions[hidden] { display: none !important; }
+
+/* ===========================================================================
+   GLASS OVER A 3D CITY
+   ===========================================================================
+   The backdrop is a slow, dim lattice rendered by console-extras.js. Panels
+   float on it as frosted glass.
+
+   Two rules keep this from becoming unreadable, which is the usual fate of
+   glassmorphism on an operator screen:
+     1. The glass is dark and only lightly transparent. Text contrast is
+        preserved against the worst case, not the average one.
+     2. Nothing behind the glass ever moves fast or changes with the data. If
+        the backdrop reacted to traffic it would compete with the numbers.
+   =========================================================================== */
+#bg3d {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+body > *:not(#bg3d) { position: relative; z-index: 1; }
+
+body {
+  background:
+    radial-gradient(1200px 700px at 78% -10%, #10243040 0%, transparent 60%),
+    radial-gradient(900px 600px at 8% 110%, #12203a40 0%, transparent 60%),
+    var(--bg);
+}
+
+/* The frosted surfaces. backdrop-filter is the whole effect; the rgba fill is
+   the fallback for browsers that do not support it. */
+.panel, .alert, .plan, .conditions, .jn, .plan-option, .cond, #tools {
+  background: rgba(19, 26, 36, 0.72);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+.plan.stopped { background: rgba(51, 38, 15, 0.76); }
+.plan.ran     { background: rgba(15, 46, 38, 0.76); }
+.alert        { background: rgba(51, 38, 15, 0.76); }
+.alert.critical { background: rgba(51, 22, 22, 0.78); }
+
+header {
+  background: rgba(10, 14, 21, 0.68);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ------------------------------------------------------------- analytics */
+#analytics-panel { display: grid; gap: 16px; }
+
+.gauge-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gauge-top { display: flex; align-items: baseline; gap: 10px; }
+.gauge-top b {
+  font-family: var(--display); font-size: 26px; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.gauge-top span {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--dim);
+}
+.gauge-track {
+  height: 8px; border-radius: 4px; margin: 9px 0 7px;
+  background: rgba(255, 255, 255, 0.07); overflow: hidden;
+}
+.gauge-track i { display: block; height: 100%; width: 0; border-radius: 4px; transition: width .4s ease, background .4s ease; }
+.gauge-note { margin: 0; font-size: 11.5px; color: var(--dim); line-height: 1.4; }
+
+.spark-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.spark-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.spark-head span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--dim); }
+.spark-head b { font-family: var(--display); font-size: 17px; font-variant-numeric: tabular-nums; }
+.spark canvas { width: 100%; height: 52px; display: block; }
+.spark-note { margin: 3px 0 0; font-size: 11px; color: var(--dim); font-family: var(--mono); }
+
+.worst {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 11px 14px; border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--warn);
+}
+.worst span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: var(--dim); }
+.worst b { font-family: var(--display); font-size: 19px; }
+.worst i { font-style: normal; font-size: 13px; color: var(--dim); margin-left: auto; }
+
+/* -------------------------------------------------------------- the alarm */
+.ghost.sound {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+  border: 1px solid var(--line); color: var(--dim);
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; background: transparent;
+}
+.ghost.sound.on { color: var(--good); border-color: var(--good); }
+
+@media (prefers-reduced-motion: reduce) {
+  #bg3d { display: none; }
+}
+
+/* The sound state sits with the link state, not crowding the help button. */
+.ghost.sound { margin-left: 10px; white-space: nowrap; }

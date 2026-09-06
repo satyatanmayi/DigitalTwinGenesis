@@ -83,14 +83,28 @@
       usedModel: p.usedModel,
       state: p.state,
       secondsLeft: Math.max(0, Math.round(p.executeAt - SIM.time())),
+      // Live consequence, so the operator can SEE what their decision did.
+      // These are measurements taken from the vehicles themselves, not a
+      // prediction replayed back - the point of the screen is that the choice
+      // has a visible price either way.
+      sinceDecision: p.decidedAt === undefined ? 0 : Math.round(SIM.time() - p.decidedAt),
+      costPaid: Math.round(SIM.stats.priorityLedger.crossVehSec),
       options: p.options.map(function (o) {
+        const req = PRIORITY.byId(o.id);
+        const veh = req && req.vehicle;
+        const onRoad = !!(veh && SIM.vehicles.indexOf(veh) !== -1);
         return {
           id: o.id, axis: o.axis, approach: o.approach, severity: o.severity,
           persons: o.persons, etaSec: Math.round(o.etaSec),
           caseScore: Math.round(o.caseScore * 100) / 100,
           networkValue: o.networkValue === null ? null : Math.round(o.networkValue * 100) / 100,
           combined: Math.round(o.combined * 100) / 100,
-          winner: o.id === p.winnerId
+          winner: o.id === p.winnerId,
+          state: req ? req.state : 'unknown',
+          served: !!(req && (req.state === 'granted' || req.state === 'completed')),
+          waitSec: veh ? Math.round(veh.waitTime) : null,
+          onRoad: onRoad,
+          cleared: !!(veh && !onRoad)
         };
       })
     };
@@ -115,6 +129,14 @@
         };
       }),
       flooded: Object.keys(SIM.conditions.floodedRoads),
+      // Trend, not just a number. An operator needs to know whether 26s of
+      // delay is on its way up or coming back down - the instantaneous figure
+      // alone cannot tell them that, and it is the thing they act on.
+      series: {
+        delay: SIM.series.avgDelay.slice(-90).map(function (v) { return Math.round(v * 10) / 10; }),
+        queue: SIM.series.totalQueue.slice(-90),
+        throughput: SIM.series.throughput.slice(-90)
+      },
       blocked: Object.keys(SIM.conditions.blockedApproaches),
       plan: planSnapshot(),
       modelReady: (typeof NN !== 'undefined') && NN.isReady(),
@@ -126,12 +148,21 @@
     };
   }
 
-  SIM.onTick(function (dt) {
-    acc += dt;
-    if (acc < PUBLISH_EVERY) return;
-    acc = 0;
+  /* Published on a WALL-CLOCK timer, not on the simulation tick.
+   *
+   * SIM.onTick is driven by requestAnimationFrame, and a browser throttles rAF
+   * in a window that is not in front. So the moment the operator looked at the
+   * control room, the street stopped publishing - and the control room sat
+   * showing whatever it had heard last. Press DO NOT PROCEED and nothing
+   * appeared to happen, because the answer was never sent.
+   *
+   * setInterval is throttled too, but only to about once a second, which is
+   * enough to keep the two screens honest with each other. The commands that
+   * come the other way are applied immediately on receipt, not on a tick, so a
+   * veto still lands even while the street is in the background. */
+  setInterval(function () {
     LINK.send('state', snapshot());
-  });
+  }, PUBLISH_EVERY * 1000);
 
   /* ------------------------------------------------------- inbound commands */
   LINK.on(function (msg) {

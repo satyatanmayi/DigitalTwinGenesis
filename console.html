@@ -4,10 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Control Room — Digital Twin Genesis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="console.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230E1116'/%3E%3Crect x='11' y='4' width='10' height='24' rx='4' fill='%231B2430'/%3E%3Ccircle cx='16' cy='10' r='3' fill='%23F87171'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23FBBF24'/%3E%3Ccircle cx='16' cy='22' r='3' fill='%2334D399'/%3E%3C/svg%3E">
 </head>
 <body>
+
+<!-- A slow, dim 3D lattice behind the glass. It carries no data on purpose:
+     an operator screen must never make you read a decoration. It exists so the
+     panels have something to be glass ON. -->
+<canvas id="bg3d" aria-hidden="true"></canvas>
 
 <header id="bar">
   <div class="brand">
@@ -23,6 +32,7 @@
   </div>
   <div class="bar-right">
     <span id="link-state">connecting…</span>
+    <button id="sound-state" class="ghost sound" type="button" title="Alarm sound">SOUND OFF — CLICK TO ARM</button>
     <button id="btn-help" class="ghost" type="button">?</button>
   </div>
 </header>
@@ -57,7 +67,7 @@
 
   <div id="plan-options" class="plan-options"></div>
 
-  <div class="plan-actions">
+  <div class="plan-actions" id="plan-actions">
     <button id="btn-plan-stop" class="danger" type="button">DO NOT PROCEED</button>
     <button id="btn-plan-now" type="button">RUN IT NOW</button>
   </div>
@@ -92,6 +102,38 @@
 
 <!-- ====================================================== the network ===== -->
 <main id="grid">
+  <section class="panel" id="analytics-panel">
+    <h2>HOW THE NETWORK IS DOING</h2>
+
+    <div class="gauge-row">
+      <div class="gauge" id="g-load">
+        <div class="gauge-top"><b id="g-load-v">—</b><span id="g-load-verdict">—</span></div>
+        <div class="gauge-track"><i id="g-load-fill"></i></div>
+        <p class="gauge-note">Network load — how full the junctions are</p>
+      </div>
+      <div class="gauge" id="g-delay">
+        <div class="gauge-top"><b id="g-delay-v">—</b><span id="g-delay-verdict">—</span></div>
+        <div class="gauge-track"><i id="g-delay-fill"></i></div>
+        <p class="gauge-note">Average delay per vehicle, against a 45s service level</p>
+      </div>
+    </div>
+
+    <div class="spark-row">
+      <div class="spark">
+        <div class="spark-head"><span>DELAY</span><b id="s-delay">—</b></div>
+        <canvas id="c-delay" width="330" height="52"></canvas>
+        <p class="spark-note" id="n-delay">last 90 seconds</p>
+      </div>
+      <div class="spark">
+        <div class="spark-head"><span>VEHICLES WAITING</span><b id="s-queue">—</b></div>
+        <canvas id="c-queue" width="330" height="52"></canvas>
+        <p class="spark-note" id="n-queue">last 90 seconds</p>
+      </div>
+    </div>
+
+    <div class="worst" id="worst"></div>
+  </section>
+
   <section class="panel" id="junction-panel">
     <h2>NETWORK</h2>
     <div id="junctions"></div>
@@ -161,5 +203,6 @@
 
 <script src="link.js"></script>
 <script src="console.js"></script>
+<script src="console-extras.js"></script>
 </body>
 </html>

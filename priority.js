@@ -555,6 +555,7 @@ const PRIORITY = (function () {
   function executePlan() {
     if (!currentPlan || currentPlan.state !== 'pending') return;
     currentPlan.state = 'executed';
+    currentPlan.decidedAt = SIM.time();
     for (const id of [currentPlan.winnerId, currentPlan.loserId]) {
       const r = byIdLocal(id);
       if (r) r.planned = false;      // back under ordinary arbitration
@@ -571,6 +572,7 @@ const PRIORITY = (function () {
   function cancelPlan(why) {
     if (!currentPlan || currentPlan.state !== 'pending') return null;
     currentPlan.state = 'cancelled';
+    currentPlan.decidedAt = SIM.time();
     for (const id of [currentPlan.winnerId, currentPlan.loserId]) {
       const r = byIdLocal(id);
       if (r) r.planned = false;

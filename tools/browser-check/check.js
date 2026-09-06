@@ -449,7 +449,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const conflictSeen = await street.evaluate(() => PRIORITY.conflicts().length);
     check('the conflict is predicted', conflictSeen > 0, conflictSeen + ' predicted');
 
-    await sleep(1500);
+    /* The conflict alert is now suppressed for a pair the plan panel already
+     * owns - asking the operator to choose something the plan has decided is
+     * worse than showing nothing. So the alert path is exercised with a pair
+     * that arrived through ordinary arbitration instead, which is the case it
+     * still exists for. */
+    await street.evaluate(() => {
+      PRIORITY.clearPlan();
+      const route = SIM.junctions.slice(0, 2).map((j) => j.id);
+      PRIORITY.submit({ severity: 'S1', verification: 'verified', axis: 'EW',
+                        route: route, etaSec: 12, persons: 1, source: 'DISPATCH-A' });
+      PRIORITY.submit({ severity: 'S1', verification: 'verified', axis: 'NS',
+                        route: route, etaSec: 14, persons: 1, source: 'DISPATCH-B' });
+    });
+    await sleep(2500);
     const alertUp = await room.evaluate(() => {
       const a = document.getElementById('alert');
       return {

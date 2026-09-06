@@ -151,35 +151,71 @@
     const box = el('plan');
     const p = state && state.plan;
 
-    if (!p || p.state !== 'pending') {
-      box.classList.add('hidden');
-      return;
-    }
+    if (!p) { box.classList.add('hidden'); return; }
+
+    // Stay on screen for a while AFTER the decision, showing what it did.
+    // Pressing a button and watching the panel simply vanish is why this
+    // screen felt dead: the operator made a choice and nothing answered.
+    const decided = (p.state === 'executed' || p.state === 'cancelled');
+    if (decided && p.sinceDecision > 45) { box.classList.add('hidden'); return; }
+
     box.classList.remove('hidden');
     el('calm').classList.add('hidden');
+    box.classList.toggle('critical', !decided && p.secondsLeft <= 3);
+    box.classList.toggle('stopped', p.state === 'cancelled');
+    box.classList.toggle('ran', p.state === 'executed');
 
-    box.classList.toggle('critical', p.secondsLeft <= 3);
-    el('plan-tag').textContent = 'PLAN READY — RUNNING AUTOMATICALLY';
-    el('plan-count').textContent = 'in ' + p.secondsLeft + 's';
-    el('plan-title').textContent =
-      'Two ambulances converging on ' + p.junctionId + ' from adjacent approaches';
-    el('plan-why').textContent = p.reason;
+    el('plan-actions').hidden = decided;
+
+    if (!decided) {
+      el('plan-tag').textContent = 'PLAN READY — RUNNING AUTOMATICALLY';
+      el('plan-count').textContent = 'in ' + p.secondsLeft + 's';
+      el('plan-title').textContent =
+        'Two ambulances converging on ' + p.junctionId + ' from adjacent approaches';
+      el('plan-why').textContent = p.reason;
+    } else if (p.state === 'cancelled') {
+      el('plan-tag').textContent = 'YOU STOPPED THE PLAN';
+      el('plan-count').textContent = p.sinceDecision + 's ago';
+      el('plan-title').textContent = 'Neither ambulance was given a corridor';
+      el('plan-why').textContent =
+        'The signals kept their ordinary plan. Nothing was taken from cross ' +
+        'traffic — and both ambulances are still waiting at ' + p.junctionId + '. ' +
+        'Watch the seconds below climb: that is what the decision cost them.';
+    } else {
+      el('plan-tag').textContent = 'THE PLAN RAN';
+      el('plan-count').textContent = p.sinceDecision + 's ago';
+      el('plan-title').textContent = p.winnerId + ' was given the corridor';
+      el('plan-why').textContent =
+        'One ambulance is moving, the other is held and released the moment it ' +
+        'clears. Cross traffic has paid ' + p.costPaid + ' vehicle-seconds for it ' +
+        'so far. Both halves of that trade are measured, not estimated.';
+    }
 
     const host = el('plan-options');
     host.innerHTML = '';
     for (const o of p.options) {
       const card = document.createElement('div');
-      card.className = 'plan-option' + (o.winner ? ' chosen' : '');
+      const good = decided && o.served;
+      const bad = decided && !o.served;
+      card.className = 'plan-option' + (o.winner ? ' chosen' : '') +
+                       (good ? ' served' : '') + (bad ? ' waiting' : '');
+      const verdict = !decided
+        ? (o.winner ? 'SERVED FIRST' : 'HELD, THEN RELEASED')
+        : (o.cleared ? 'CLEARED THE JUNCTION'
+                     : (o.served ? 'MOVING ON A GREEN CORRIDOR' : 'STILL WAITING'));
       card.innerHTML =
         '<div class="po-head"><b>' + esc(o.id) + '</b>' +
         '<span>' + esc(o.severity) + ' · ' + o.persons +
         (o.persons === 1 ? ' patient' : ' on board') + ' · from ' + esc(o.approach) + '</span></div>' +
         '<div class="po-rows">' +
-        row('the case', o.caseScore) +
-        row('the network', o.networkValue === null ? 'no model' : o.networkValue) +
-        row('combined', o.combined) +
+        (decided
+          ? row('seconds lost so far', o.waitSec === null ? '—' : o.waitSec + 's')
+            + row('status', o.state)
+          : row('the case', o.caseScore) +
+            row('the network', o.networkValue === null ? 'no model' : o.networkValue) +
+            row('combined', o.combined)) +
         '</div>' +
-        '<div class="po-verdict">' + (o.winner ? 'SERVED FIRST' : 'HELD, THEN RELEASED') + '</div>';
+        '<div class="po-verdict">' + verdict + '</div>';
       host.appendChild(card);
     }
 
@@ -275,9 +311,16 @@
     const calm = el('calm');
     const conflicts = (state && state.conflicts) || [];
 
-    // Only alert on conflicts that have not already been decided.
+    // Only alert on conflicts that have not already been decided - and never
+    // while the plan panel is dealing with the same pair. Showing "choose one"
+    // above "the plan ran" asks the operator to make a decision that has
+    // already been made, which is worse than showing nothing.
+    const plan = state && state.plan;
+    const planIds = plan ? [plan.winnerId, plan.loserId] : [];
     const live = conflicts.filter(function (c) {
-      return !decided[c.a.id + '|' + c.b.id];
+      if (decided[c.a.id + '|' + c.b.id]) return false;
+      if (plan && planIds.indexOf(c.a.id) !== -1 && planIds.indexOf(c.b.id) !== -1) return false;
+      return true;
     });
 
     if (!live.length) {
@@ -449,6 +492,10 @@
       });
     }
     watchForEvents();
+    // Presentation and sound live in console-extras.js; it reads the same
+    // state and never sends a command.
+    if (typeof CONSOLE_EXTRAS !== 'undefined') CONSOLE_EXTRAS.onState(state);
+
     renderPlan();
     renderConditions();
     renderAlert();
