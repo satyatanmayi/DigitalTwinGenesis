@@ -243,9 +243,13 @@
       translate(v.x, v.y);
       if (v.dir === 'N' || v.dir === 'S') rotate(HALF_PI);
 
-      if (v.priority) {
+      if (v.emergency || v.priority) {
+        // Both ambulances in a conflict are drawn as ambulances. Only the one
+        // actually holding a green corridor gets the halo, so the picture shows
+        // which one won rather than implying both did.
         noStroke();
-        fill(34, 211, 238, 70); ellipse(0, 0, len + 34, len + 34);
+        if (v.priority) { fill(34, 211, 238, 70); ellipse(0, 0, len + 34, len + 34); }
+        else { stroke(C.warn); strokeWeight(1.5); noFill(); ellipse(0, 0, len + 22, len + 22); noStroke(); }
         fill('#ffffff');
         rect(0, 0, len, wid, 2);
         fill(C.red);
@@ -784,7 +788,7 @@
              'vehicles are barred, which is why we model five vehicle types.',
         run: function () {
           SCENARIOS.accident('J2', 'E');
-          setTimeout(function () { SCENARIOS.flood('row1', 0.45, true); }, 4000);
+          later(function () { SCENARIOS.flood('row1', 0.45, true); }, 4000);
         }
       },
       4: {
@@ -815,14 +819,62 @@
       document.getElementById('cap-mode').textContent = caps[modes[id]];
     }
 
-    document.querySelectorAll('.demo-steps .step').forEach(function (btn) {
+    /* The step buttons used to only ever gain a green tick, because the tick
+     * meant "rehearsed" and nothing removed it. In a live demo that is the
+     * wrong model: what you want is to see which step is RUNNING, and to be
+     * able to back out of one you opened by mistake. So there are now two
+     * states - `active` for the step on screen, `done` for steps already shown
+     * - and clicking the active step again undoes it. */
+    const steps = document.querySelectorAll('.demo-steps .step');
+
+    /* Some steps stage themselves in two beats - the collision first, the
+     * flood a few seconds later - so the audience sees one thing at a time.
+     * Those timers have to be cancellable. Without this, clearing a step wipes
+     * the scene and then its pending timer fires and puts the flood back, which
+     * looks exactly like the tool ignoring you. */
+    const demoTimers = [];
+    function later(fn, ms) { demoTimers.push(setTimeout(fn, ms)); }
+    function clearTimers() {
+      while (demoTimers.length) clearTimeout(demoTimers.pop());
+    }
+
+    function clearScene() {
+      clearTimers();
+      SCENARIOS.clearAll();
+      if (typeof PRIORITY !== 'undefined') { PRIORITY.cancelPlan(); PRIORITY.clearPlan(); }
+      SIM.setControlMode('plan');
+      setSeg('btn-plan');
+    }
+
+    steps.forEach(function (btn) {
       btn.addEventListener('click', function () {
         const step = SCRIPT[btn.dataset.step];
         if (!step) return;
+
+        if (btn.classList.contains('active')) {
+          btn.classList.remove('active');
+          clearScene();
+          document.getElementById('demo-say').textContent =
+            'Step ' + btn.dataset.step + ' cleared. The network is back to the ' +
+            'fixed plan with nothing running. Press it again to replay it.';
+          return;
+        }
+
+        steps.forEach(function (o) {
+          if (o.classList.contains('active')) o.classList.replace('active', 'done');
+        });
+        clearTimers();          // a previous step's staged beats must not land in this one
         step.run();
         document.getElementById('demo-say').textContent = step.say;
-        btn.classList.add('done');
+        btn.classList.add('active');
       });
+    });
+
+    document.getElementById('btn-demo-reset').addEventListener('click', function () {
+      steps.forEach(function (o) { o.classList.remove('active', 'done'); });
+      clearScene();
+      document.getElementById('demo-say').textContent =
+        'Demo reset. Nothing is running and no step is marked. Press 1 to begin.';
     });
 
     document.getElementById('btn-open-console').addEventListener('click', function () {

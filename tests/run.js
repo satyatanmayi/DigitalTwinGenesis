@@ -243,10 +243,30 @@ section('Arbitration - the behaviour the pitch claims');
   const pair = w.run('SCENARIOS.twoAmbulances()');
   advance(w, 1);
 
+  // Both ambulances are on the road and NEITHER is served yet: a standing plan
+  // owns the decision until its countdown expires. That gap is deliberate - it
+  // is the window in which the control room can veto - so a test that demanded
+  // an immediate grant would be testing the behaviour we removed on purpose.
   const states = w.run('PRIORITY.requests.map(function (r) { return r.state; })');
-  check('one request is granted and the other waits',
-        states.indexOf('granted') !== -1 && states.indexOf('queued') !== -1,
+  check('neither request is served while the plan is still standing',
+        states.every(function (st) { return st !== 'granted'; }),
         states.join(', '));
+
+  const onRoad = w.run('SIM.vehicles.filter(function (v) { return v.emergency; }).length');
+  check('both ambulances are on the road from the moment the calls come in',
+        onRoad === 2, onRoad + ' ambulances');
+
+  const plan = w.run('PRIORITY.plan()');
+  check('the plan names a winner and states its reasoning',
+        !!plan && !!plan.winnerId && String(plan.reason).indexOf('case score') !== -1,
+        plan ? plan.reason : 'no plan');
+
+  // Now let the countdown run out. The default is to act.
+  advance(w, w.run('PRIORITY.PLAN_LEAD_SEC') + 2);
+  const after = w.run('PRIORITY.requests.map(function (r) { return r.state; })');
+  check('when the countdown expires exactly one is granted',
+        after.filter(function (st) { return st === 'granted'; }).length === 1,
+        after.join(', '));
 
   const conflicts = w.run('PRIORITY.conflicts().length');
   check('the conflict is predicted before either vehicle arrives',

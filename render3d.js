@@ -98,6 +98,7 @@ const RENDER3D = (function () {
     buildRoads();
     buildJunctions();
     buildVehicles();
+    buildAmbulances();
     buildScenarioLayer();
     buildOverlay();
 
@@ -266,11 +267,60 @@ const RENDER3D = (function () {
 
   const colour = { r: 0, g: 0, b: 0 };
 
+  /* An InstancedMesh carries one colour per instance, so it can paint an
+   * ambulance white but it cannot put a red stripe down the side of it. There
+   * are never more than a handful of emergency vehicles, so they are drawn as
+   * ordinary meshes from a small pool instead: white body, red stripe, blue
+   * beacon - the same reading as the 2D view. */
+  const AMB_POOL = 6;
+  const ambulances = [];
+
+  function buildAmbulances() {
+    const body = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.4 });
+    const stripe = new THREE.MeshBasicMaterial({ color: 0xE5484D });
+    const beacon = new THREE.MeshBasicMaterial({ color: 0x38BDF8 });
+
+    for (let i = 0; i < AMB_POOL; i++) {
+      const g = new THREE.Group();
+      const shell = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.25, 1.15), body);
+      shell.position.y = 0.62;
+      g.add(shell);
+
+      // A stripe on each flank, so it reads from either side of the orbit.
+      for (const z of [0.59, -0.59]) {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(2.62, 0.34, 0.02), stripe);
+        s.position.set(0, 0.6, z);
+        g.add(s);
+      }
+      const light = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.22, 0.5), beacon);
+      light.position.y = 1.36;
+      g.add(light);
+
+      // The halo that says "this one holds the corridor", matching 2D.
+      const halo = new THREE.Mesh(
+        new THREE.RingGeometry(1.9, 2.5, 28),
+        new THREE.MeshBasicMaterial({ color: 0x22D3EE, transparent: true,
+                                      opacity: 0.5, side: THREE.DoubleSide })
+      );
+      halo.rotation.x = -Math.PI / 2;
+      halo.position.y = 0.08;
+      g.add(halo);
+
+      g.visible = false;
+      scene.add(g);
+      ambulances.push({ group: g, halo: halo, beacon: light, vehicle: null });
+    }
+  }
+
   function updateVehicles() {
-    const n = Math.min(SIM.vehicles.length, MAX_VEHICLES);
     const tmp = new THREE.Color();
-    for (let i = 0; i < n; i++) {
-      const v = SIM.vehicles[i];
+    const emergency = [];
+    let i = 0;
+
+    for (const v of SIM.vehicles) {
+      if (v.emergency || v.priority) { emergency.push(v); continue; }
+      if (i >= MAX_VEHICLES) break;
+
       const len = v.type.len * SCALE * 1.35;      // same readability nudge as 2D
       const wid = Math.max(0.55, v.type.wid * SCALE * 1.35);
       const hgt = v.type.id === 'bus' || v.type.id === 'truck' ? 1.5 : 0.85;
@@ -281,13 +331,27 @@ const RENDER3D = (function () {
       dummy.obj.updateMatrix();
       cars.setMatrixAt(i, dummy.obj.matrix);
 
-      tmp.setHex(v.priority ? COLOURS.priority : (TYPE_COLOUR[v.type.id] || 0x22D3EE));
-      if (v.speed < 8 && !v.priority) tmp.multiplyScalar(0.55);
+      tmp.setHex(TYPE_COLOUR[v.type.id] || 0x22D3EE);
+      if (v.speed < 8) tmp.multiplyScalar(0.55);
       cars.setColorAt(i, tmp);
+      i++;
     }
-    cars.count = n;
+    cars.count = i;
     cars.instanceMatrix.needsUpdate = true;
     if (cars.instanceColor) cars.instanceColor.needsUpdate = true;
+
+    const flash = (Math.sin(SIM.time() * 9) > 0);
+    for (let k = 0; k < ambulances.length; k++) {
+      const slot = ambulances[k];
+      const v = emergency[k] || null;
+      slot.vehicle = v;
+      slot.group.visible = !!v;
+      if (!v) continue;
+      slot.group.position.set(sx(v.x), 0.2, sz(v.y));
+      slot.group.rotation.y = (v.dir === 'N' || v.dir === 'S') ? Math.PI / 2 : 0;
+      slot.halo.visible = !!v.priority;
+      slot.beacon.material.color.setHex(flash ? 0x38BDF8 : 0xE5484D);
+    }
   }
 
   /* ================================================================ scenarios
@@ -303,8 +367,10 @@ const RENDER3D = (function () {
    * texture-based label goes blurry the moment someone scrolls in.
    */
   const incidentRings = {};          // junctionId -> mesh
+  const blockedMarks = {};           // "J2:E" -> crossed-bars group
   const floodPlanes = {};            // roadId -> mesh
-  let overlay = null, labelEls = {}, priorityEl = null, bannerEl = null;
+  let overlay = null, labelEls = {}, bannerEl = null;
+  const ambulanceEls = [];
 
   function buildScenarioLayer() {
     for (const j of SIM.junctions) {
@@ -318,6 +384,29 @@ const RENDER3D = (function () {
       ring.visible = false;
       scene.add(ring);
       incidentRings[j.id] = ring;
+    }
+
+    /* Blocked approaches. The 2D view draws a red cross and the word BLOCKED at
+     * the mouth of the approach that cannot discharge, and that - not the
+     * incident ring - is what the ACCIDENT scenario actually sets. Leaving it
+     * out of 3D meant the accident demo showed a queue with no visible cause. */
+    const barMat = new THREE.MeshBasicMaterial({ color: COLOURS.red });
+    const off = (G.junctionHalf + 46) * SCALE;
+    const DIR_OFFSET = { E: [off, 0], W: [-off, 0], S: [0, off], N: [0, -off] };
+    for (const j of SIM.junctions) {
+      for (const dir in DIR_OFFSET) {
+        const [dx, dz] = DIR_OFFSET[dir];
+        const group = new THREE.Group();
+        for (const rot of [Math.PI / 4, -Math.PI / 4]) {
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.5, 0.55), barMat);
+          bar.rotation.y = rot;
+          group.add(bar);
+        }
+        group.position.set(sx(j.x) + dx, 1.4, sz(j.y) + dz);
+        group.visible = false;
+        scene.add(group);
+        blockedMarks[j.id + ':' + dir] = group;
+      }
     }
 
     const water = new THREE.MeshStandardMaterial({
@@ -353,11 +442,17 @@ const RENDER3D = (function () {
       labelEls[j.id] = el;
     }
 
-    priorityEl = document.createElement('div');
-    priorityEl.className = 'ov3d-priority';
-    priorityEl.textContent = 'PRIORITY';
-    priorityEl.hidden = true;
-    overlay.appendChild(priorityEl);
+    // One tag per ambulance, not one for "the" priority vehicle. In a two
+    // ambulance conflict both are on the road and the interesting thing is
+    // which of them has the corridor - a single label could only ever show one
+    // of them, which is exactly the case the demo is about.
+    for (let i = 0; i < AMB_POOL; i++) {
+      const tag = document.createElement('div');
+      tag.className = 'ov3d-priority';
+      tag.hidden = true;
+      overlay.appendChild(tag);
+      ambulanceEls.push(tag);
+    }
 
     bannerEl = document.createElement('div');
     bannerEl.className = 'ov3d-banner';
@@ -372,6 +467,9 @@ const RENDER3D = (function () {
     }
     for (const id in floodPlanes) {
       floodPlanes[id].visible = !!SIM.conditions.floodedRoads[id];
+    }
+    for (const key in blockedMarks) {
+      blockedMarks[key].visible = !!SIM.conditions.blockedApproaches[key];
     }
   }
 
@@ -405,21 +503,29 @@ const RENDER3D = (function () {
       el.classList.toggle('incident', !!SENSOR_FEED.incidentActive(j.id));
     }
 
-    const pv = SCENARIOS.trackedVehicle();
-    if (pv) {
-      const p = toScreen(sx(pv.x), 3.2, sz(pv.y));
-      priorityEl.hidden = p.behind;
-      priorityEl.style.left = p.left + 'px';
-      priorityEl.style.top = p.top + 'px';
-    } else {
-      priorityEl.hidden = true;
+    for (let k = 0; k < ambulanceEls.length; k++) {
+      const tag = ambulanceEls[k];
+      const slot = ambulances[k];
+      const v = slot && slot.vehicle;
+      if (!v) { tag.hidden = true; continue; }
+      const p = toScreen(sx(v.x), 2.6, sz(v.y));
+      tag.hidden = p.behind;
+      tag.style.left = p.left + 'px';
+      tag.style.top = p.top + 'px';
+      tag.textContent = v.priority ? 'PRIORITY' : 'HELD';
+      tag.classList.toggle('held', !v.priority);
     }
 
     // One banner, for whichever thing the audience most needs told in words.
     const flooded = Object.keys(SIM.conditions.floodedRoads);
+    const blocked = Object.keys(SIM.conditions.blockedApproaches);
     if (SIM.isPaused()) {
       bannerEl.hidden = false;
       bannerEl.textContent = 'PAUSED';
+    } else if (blocked.length) {
+      bannerEl.hidden = false;
+      bannerEl.textContent = 'BLOCKED — ' + blocked.join(', ') +
+        ' cannot discharge' + (flooded.length ? ' · FLOODED ' + flooded.join(', ') : '');
     } else if (flooded.length) {
       bannerEl.hidden = false;
       bannerEl.textContent = 'FLOODED — NO HEAVY VEHICLES ON ' +

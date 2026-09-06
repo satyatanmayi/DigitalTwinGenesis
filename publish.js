@@ -68,6 +68,34 @@
     };
   }
 
+  /* The proposed priority plan, if one is on the table. It carries a live
+   * countdown because the control room's only real decision is whether to stop
+   * it before that reaches zero - so the number has to be current, not the one
+   * that was true when the plan was made. */
+  function planSnapshot() {
+    const p = (typeof PRIORITY !== 'undefined') && PRIORITY.plan();
+    if (!p) return null;
+    return {
+      junctionId: p.junctionId,
+      winnerId: p.winnerId,
+      loserId: p.loserId,
+      reason: p.reason,
+      usedModel: p.usedModel,
+      state: p.state,
+      secondsLeft: Math.max(0, Math.round(p.executeAt - SIM.time())),
+      options: p.options.map(function (o) {
+        return {
+          id: o.id, axis: o.axis, approach: o.approach, severity: o.severity,
+          persons: o.persons, etaSec: Math.round(o.etaSec),
+          caseScore: Math.round(o.caseScore * 100) / 100,
+          networkValue: o.networkValue === null ? null : Math.round(o.networkValue * 100) / 100,
+          combined: Math.round(o.combined * 100) / 100,
+          winner: o.id === p.winnerId
+        };
+      })
+    };
+  }
+
   function snapshot() {
     return {
       clock: Math.round(SIM.time()),
@@ -87,6 +115,8 @@
         };
       }),
       flooded: Object.keys(SIM.conditions.floodedRoads),
+      blocked: Object.keys(SIM.conditions.blockedApproaches),
+      plan: planSnapshot(),
       modelReady: (typeof NN !== 'undefined') && NN.isReady(),
       ledger: {
         grants: SIM.stats.priorityLedger.grants,
@@ -113,6 +143,19 @@
         else SIM.setPlan(c.junction, c.plan);
         note('Control room set ' + c.junction + ' to ' +
              c.plan.greenNS + 's/' + c.plan.greenEW + 's.');
+        break;
+
+      case 'stopPlan': {
+        const stopped = PRIORITY.cancelPlan(c.why);
+        note(stopped
+          ? 'Control room STOPPED the priority plan before it ran. Both ambulances stay queued.'
+          : 'Control room asked to stop a plan, but it had already run.');
+        break;
+      }
+
+      case 'runPlanNow':
+        PRIORITY.executePlan();
+        note('Control room ran the priority plan immediately.');
         break;
 
       case 'controller':

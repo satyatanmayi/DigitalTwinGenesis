@@ -28,11 +28,27 @@ const FEATURES = (function () {
   const SIZE = 8;
 
   function forJunction(j) {
+    return forJunctionAs(j, j.phase, j.greenElapsed);
+  }
+
+  /**
+   * The same eight numbers, but written as if `phase` were the one being served
+   * and it had been green for `elapsed` seconds.
+   *
+   * This is what lets something ask the model a hypothetical - "how good would
+   * this junction look if I gave the green to east-west instead?" - without
+   * touching the signal. The counterfactual has to be built from the SAME
+   * definition as the real vector or the answer means nothing, which is why it
+   * lives here rather than in the caller.
+   */
+  function forJunctionAs(j, phase, elapsed) {
     const nsQ = j.pcuQueues.N + j.pcuQueues.S;
     const ewQ = j.pcuQueues.E + j.pcuQueues.W;
     const nsW = Math.max(j.longestWait.N, j.longestWait.S);
     const ewW = Math.max(j.longestWait.E, j.longestWait.W);
-    const isNS = j.phase === 'NS';
+    const isNS = phase === 'NS';
+    j = { pcuQueues: j.pcuQueues, longestWait: j.longestWait,
+          greenElapsed: elapsed === undefined ? j.greenElapsed : elapsed };
 
     const greenQ = isNS ? nsQ : ewQ;
     const redQ = isNS ? ewQ : nsQ;
@@ -64,5 +80,6 @@ const FEATURES = (function () {
     'green elapsed (s/60)', 'min green served'
   ];
 
-  return { SIZE: SIZE, forJunction: forJunction, all: all, LABELS: LABELS };
+  return { SIZE: SIZE, forJunction: forJunction, forJunctionAs: forJunctionAs,
+           all: all, LABELS: LABELS };
 })();

@@ -269,6 +269,7 @@ const PRIORITY = (function () {
     SIM.stats.priorityLedger.grants++;
     SIM.stats.priorityLedger.active = true;
     spawnVehicle(req);
+    if (req.vehicle) req.vehicle.priority = true;
     note('granted', req.id, req.id + ' GRANTED — ' + req.workings);
     return req;
   }
@@ -292,23 +293,46 @@ const PRIORITY = (function () {
     SIM.clearPriorityHold(req.id);
     req.state = 'queued';
     req.reason = why;
+    if (req.vehicle) req.vehicle.priority = false;   // still an ambulance, no longer a corridor
     note('revoked', req.id, req.id + ' hold released — ' + why);
   }
 
   /* ------------------------------------------------------------- the vehicle */
   function spawnVehicle(req) {
     if (req.vehicle) return;
-    const dir = (req.axis === 'NS') ? 'S' : 'E';
+    const dir = req.approach || ((req.axis === 'NS') ? 'S' : 'E');
     const points = SIM.spawnPoints().filter(function (sp) { return sp.dir === dir; });
     if (!points.length) return;
     const sp = points[req.lane % points.length];
     const type = SIM.VEHICLE_TYPES[2];
-    const s = (dir === 'E') ? sp.x : sp.y;
+    let s = SIM.progressOf(dir, sp.x, sp.y);
+
+    // If the request names one junction and an ETA, start the ambulance that
+    // many seconds of free running short of it. Two ambulances on perpendicular
+    // approaches then actually converge, instead of both starting at the map
+    // edge and arriving whenever their different distances happen to allow.
+    if (req.etaSec && req.route && req.route.length === 1) {
+      const j = SIM.junctionById(req.route[0]);
+      if (j) {
+        const target = SIM.progressOf(dir, j.x, j.y) - req.etaSec * type.maxSpeed;
+        if (target > s) s = target;
+      }
+    }
+    // x and y must agree with s from the first frame, or the ambulance appears
+    // at the map edge for one tick before snapping to where it really is.
+    const horizontal = (dir === 'E' || dir === 'W');
+    const sign = SIM.progressOf(dir, 1, 1);          // +1 for E and S, -1 for W and N
     const v = {
       id: 90000 + nextId, type: type, dir: sp.dir, lane: sp.lane, road: sp.road,
-      lat: sp.lat, s: s, x: sp.x, y: sp.y,
+      lat: sp.lat, s: s,
+      x: horizontal ? sign * s : sp.lat,
+      y: horizontal ? sp.lat : sign * s,
       speed: type.maxSpeed * 0.9, waitTime: 0, travelled: 0,
-      bornAt: SIM.time(), priority: true, requestId: req.id, passed: {}
+      // emergency = it is an ambulance. priority = it currently holds a green
+      // corridor. The loser of a conflict is the first without the second, and
+      // the renderers draw that difference.
+      bornAt: SIM.time(), emergency: true, priority: !!req.grantedAt,
+      requestId: req.id, passed: {}
     };
     SIM.vehicles.push(v);
     req.vehicle = v;
@@ -384,6 +408,12 @@ const PRIORITY = (function () {
     for (const req of requests) {
       if (req.state === 'pending' || req.state === 'queued') {
         req.etaSec = Math.max(0, req.etaSec - dt);
+        // A request under a standing plan is NOT decided here. This loop runs
+        // every frame, so without this the ordinary arbitration would grant one
+        // of the two ambulances within a frame of the calls arriving and the
+        // plan would be announcing a decision that had already been taken -
+        // and the operator's veto would have nothing left to stop.
+        if (req.planned && currentPlan && currentPlan.state === 'pending') continue;
         decide(req);
       } else if (req.state === 'granted') {
         const v = req.vehicle;
@@ -417,6 +447,9 @@ const PRIORITY = (function () {
       vehicleType: opts.vehicleType || 'ambulance',
       persons: opts.persons || 1,
       axis: opts.axis || 'EW',
+      // Which side it is coming from. Two ambulances on the same axis are a
+      // queue; two on perpendicular approaches are a decision.
+      approach: opts.approach || (opts.axis === 'NS' ? 'S' : 'E'),
       route: opts.route || SIM.junctions.map(function (j) { return j.id; }),
       lane: opts.lane || 0,
       etaSec: opts.etaSec === undefined ? 14 : opts.etaSec,
@@ -425,7 +458,9 @@ const PRIORITY = (function () {
       reason: '',
       estimate: null,
       actual: null,
-      vehicle: null
+      vehicle: null,
+      planned: !!opts.hold        // a standing plan owns this one, not the tick
+
     };
     nextId++;
     requests.push(req);
@@ -433,24 +468,172 @@ const PRIORITY = (function () {
       req.severity + ', ' + req.verification + ', ' + req.vehicleType +
       ', arriving in ' + req.etaSec.toFixed(0) + 's on the ' + req.axis + ' axis.');
     predictConflicts();
-    decide(req);
+    // An ambulance exists whether or not it is given a green. Putting it on the
+    // road at the moment of the call is what makes the conflict visible - the
+    // old code only created the vehicle for the winner, so the demo showed one
+    // ambulance and an argument about a second one nobody could see.
+    if (opts.hold) spawnVehicle(req);
+    else decide(req);
     return req;
   }
 
-  /** The demo case: two ambulances, one junction, opposite phases. */
+  /* ==================================================================== plans
+   * TWO AMBULANCES, ONE JUNCTION, ADJACENT APPROACHES
+   *
+   * Both are real vehicles on the road from the moment the calls come in, both
+   * heading for the same junction from perpendicular sides, arriving within a
+   * few seconds of each other. Only one phase can be green, so one of them
+   * waits. There is no version of this where nobody loses.
+   *
+   * The choice is made from two independent things, kept separate on purpose:
+   *
+   *   THE CASE      severity, verification, people on board, seconds saved.
+   *                 This is about the patients, and it is arithmetic a human
+   *                 can check line by line.
+   *
+   *   THE NETWORK   what the trained model values each junction state at if the
+   *                 green goes that way. This is about everybody else, and it
+   *                 is the model doing the job it was trained for.
+   *
+   * They are combined, both are printed, and the plan runs on a timer. The
+   * default is to execute, because in an emergency the machine acting and the
+   * human able to stop it is safer than the machine waiting for permission.
+   * The control room can veto until the timer expires.
+   */
+  const PLAN_LEAD_SEC = 8;         // how long the operator has to say no
+  let currentPlan = null;
+
+  function planFor(junctionId, a, b) {
+    const j = SIM.junctionById(junctionId);
+    const nnReady = (typeof NN !== 'undefined') && NN.isReady();
+
+    function side(req) {
+      scoreOf(req);
+      const value = nnReady ? NN.valueOfServing(j, req.axis) : null;
+      return {
+        id: req.id, axis: req.axis, approach: req.approach,
+        severity: req.severity, persons: req.persons,
+        etaSec: req.etaSec,
+        caseScore: req.estimate.score,
+        networkValue: value,
+        // The network value is a small number either side of zero; the case
+        // score carries the units. Adding them directly would let the model
+        // silently outvote a critical patient, so it is a modest adjustment.
+        combined: req.estimate.score * (1 + 0.25 * (value === null ? 0 : value))
+      };
+    }
+
+    const A = side(a), B = side(b);
+    const winner = A.combined >= B.combined ? A : B;
+    const loser = winner === A ? B : A;
+
+    let why = winner.id + ' is served first: case score ' +
+      winner.caseScore.toFixed(2) + ' against ' + loser.caseScore.toFixed(2);
+    if (nnReady) {
+      why += ', and the model values ' + winner.axis + ' green at ' +
+        winner.networkValue.toFixed(2) + ' against ' + loser.networkValue.toFixed(2) +
+        ' for ' + loser.axis;
+    } else {
+      why += ' (no trained model loaded, so the case score decides alone)';
+    }
+    why += '. ' + loser.id + ' is held and released the moment ' + winner.id + ' clears.';
+
+    return {
+      junctionId: junctionId,
+      options: [A, B],
+      winnerId: winner.id,
+      loserId: loser.id,
+      reason: why,
+      usedModel: nnReady,
+      proposedAt: SIM.time(),
+      executeAt: SIM.time() + PLAN_LEAD_SEC,
+      state: 'pending'
+    };
+  }
+
+  /** Run the plan unless the operator stopped it first. */
+  function executePlan() {
+    if (!currentPlan || currentPlan.state !== 'pending') return;
+    currentPlan.state = 'executed';
+    for (const id of [currentPlan.winnerId, currentPlan.loserId]) {
+      const r = byIdLocal(id);
+      if (r) r.planned = false;      // back under ordinary arbitration
+    }
+    const winner = byIdLocal(currentPlan.winnerId);
+    const loser = byIdLocal(currentPlan.loserId);
+    if (winner && winner.state !== 'granted') forceGrant(winner);
+    if (loser && loser.state === 'granted') revoke(loser, 'Yielded to ' + currentPlan.winnerId + '.');
+    else if (loser) queueIt(loser, 'Held behind ' + currentPlan.winnerId + ' at ' +
+                            currentPlan.junctionId + '.');
+    note('operator', currentPlan.winnerId, 'PLAN EXECUTED — ' + currentPlan.reason);
+  }
+
+  function cancelPlan(why) {
+    if (!currentPlan || currentPlan.state !== 'pending') return null;
+    currentPlan.state = 'cancelled';
+    for (const id of [currentPlan.winnerId, currentPlan.loserId]) {
+      const r = byIdLocal(id);
+      if (r) r.planned = false;
+    }
+    currentPlan.cancelReason = why || 'Stopped by the control room operator.';
+    note('operator', currentPlan.winnerId,
+         'PLAN STOPPED before it ran — ' + currentPlan.cancelReason +
+         ' Both requests stay queued and the signals keep their normal plan.');
+    for (const id of [currentPlan.winnerId, currentPlan.loserId]) {
+      const r = byIdLocal(id);
+      if (r && r.state === 'granted') revoke(r, 'Plan stopped by the operator.');
+      else if (r) queueIt(r, 'Plan stopped by the operator.');
+    }
+    return currentPlan;
+  }
+
+  function byIdLocal(id) {
+    for (const r of requests) if (r.id === id) return r;
+    return null;
+  }
+
+  SIM.onTick(function () {
+    if (currentPlan && currentPlan.state === 'pending' && SIM.time() >= currentPlan.executeAt) {
+      executePlan();
+    }
+  });
+
+  /** The demo case: two ambulances converging on one junction from the side. */
   function demoConflict() {
-    const mid = SIM.junctions.slice(0, 2).map(function (j) { return j.id; });
+    const j = SIM.junctions[0];
+
+    // Perpendicular approaches to the SAME junction, timed to arrive together.
     const a = submit({ severity: 'S1', verification: 'verified', axis: 'EW',
-                       route: mid, etaSec: 12, persons: 1, lane: 0 });
-    const b = submit({ severity: 'S1', verification: 'verified', axis: 'NS',
-                       route: mid, etaSec: 15, persons: 1, lane: 0 });
+                       approach: 'E', route: [j.id], etaSec: 13, persons: 1,
+                       lane: j.row, source: 'AMBULANCE-1', hold: true });
+    const b = submit({ severity: 'S2', verification: 'verified', axis: 'NS',
+                       approach: 'S', route: [j.id], etaSec: 14, persons: 4,
+                       lane: j.col, source: 'AMBULANCE-2', hold: true });
+
+    currentPlan = planFor(j.id, a, b);
+    note('incident', 'Two ambulances converging on ' + j.id +
+      ' from adjacent approaches, ' + a.etaSec.toFixed(0) + 's and ' +
+      b.etaSec.toFixed(0) + 's out. ' + currentPlan.reason +
+      ' Executing in ' + PLAN_LEAD_SEC + 's unless the control room stops it.');
     return [a, b];
   }
 
   function reset() {
+    // Take the ambulances off the road with their requests. Without this,
+    // clearing the scenario left the vehicles driving around belonging to
+    // requests that no longer exist - and because nextId restarts at 1, the
+    // next demo issued REQ-001 again while a ghost REQ-001 was still out
+    // there. Visible as ambulances that survive ALL CLEAR.
+    for (const req of requests) {
+      const i = req.vehicle ? SIM.vehicles.indexOf(req.vehicle) : -1;
+      if (i !== -1) SIM.vehicles.splice(i, 1);
+      req.vehicle = null;
+    }
+    for (const req of requests) SIM.clearPriorityHold(req.id);
     requests.length = 0;
     log.length = 0;
     conflicts.length = 0;
+    currentPlan = null;
     nextId = 1;
   }
 
@@ -484,6 +667,11 @@ const PRIORITY = (function () {
     log: log,
     submit: submit,
     demoConflict: demoConflict,
+    PLAN_LEAD_SEC: PLAN_LEAD_SEC,
+    plan: function () { return currentPlan; },
+    cancelPlan: cancelPlan,
+    executePlan: executePlan,
+    clearPlan: function () { currentPlan = null; },
     conflicts: function () { return conflicts; },
     active: function () { return requests.filter(function (r) { return r.state === 'granted'; }); },
     pending: function () { return requests.filter(function (r) { return r.state === 'pending' || r.state === 'queued'; }); },

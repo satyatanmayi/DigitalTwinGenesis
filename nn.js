@@ -135,7 +135,22 @@ const NN = (function () {
       const q = predict(FEATURES.forJunction(j));
       return q ? { hold: q[0], switchTo: q[1] } : null;
     },
-    featureVector: function (j) { return FEATURES.forJunction(j); }
+    featureVector: function (j) { return FEATURES.forJunction(j); },
+
+    /**
+     * What the trained model thinks this junction is worth if the green goes to
+     * `axis` right now. Used by the priority planner to ask the network's own
+     * cost of serving each of two competing ambulances.
+     *
+     * This is the model doing the job it was trained for - valuing a junction
+     * state - and nothing more. It is NOT deciding which patient matters more;
+     * that is the severity and occupancy metrics, and the two are combined and
+     * shown separately so nobody can confuse them.
+     */
+    valueOfServing: function (j, axis) {
+      const q = predict(FEATURES.forJunctionAs(j, axis, 0));
+      return q ? q[0] : null;
+    }
   };
 })();
 

@@ -296,49 +296,6 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const facts = await street.$$eval('#model-facts .fact', (f) => f.length);
     check('the model panel shows how it was trained', facts >= 6, facts + ' facts');
 
-    /* ---- the 3D view must show the scenarios, not just the traffic ----
-     * A pretty animation with no flooded road and no stated reason tells an
-     * audience nothing about what the demo is doing. Headless Chromium often
-     * has no WebGL, and that is not a failure of this code, so the check
-     * reports which of the two cases it hit.
-     */
-    await street.click('.tab[data-pane="operate"]');
-    await sleep(300);
-    await street.click('#btn-flood');
-    await sleep(600);
-    const wentThreeD = await street.evaluate(() => {
-      document.getElementById('view-3d').click();
-      return RENDER3D.isActive();
-    });
-    await sleep(1400);
-    if (wentThreeD) {
-      const ov = await street.evaluate(() => {
-        const cards = [...document.querySelectorAll('.ov3d-card')];
-        const banner = document.querySelector('.ov3d-banner');
-        return {
-          cards: cards.length,
-          placed: cards.filter((e) => !e.hidden && parseFloat(e.style.left) > 0).length,
-          text: (cards[0] && cards[0].textContent) || '',
-          banner: banner && !banner.hidden ? banner.textContent : ''
-        };
-      });
-      check('the 3D view labels every junction with its decision',
-            ov.cards === 4 && ov.placed === 4,
-            ov.placed + '/4 placed: "' + ov.text.trim() + '"');
-      check('and says out loud when a road is flooded',
-            /FLOODED/.test(ov.banner), ov.banner || 'no banner');
-    } else {
-      check('the 3D view refuses politely when WebGL is unavailable',
-            true, 'no WebGL context in this browser, and 2D is unaffected');
-    }
-    await street.evaluate(() => { document.getElementById('view-2d').click(); });
-    await street.click('.tab[data-pane="operate"]');
-    await sleep(200);
-    await street.click('#btn-normal');
-    await sleep(400);
-    await street.click('.tab[data-pane="learn"]');
-    await sleep(300);
-
     await street.click('.tab[data-pane="operate"]');
     await sleep(400);
 
@@ -380,9 +337,69 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     const requests = await street.evaluate(() =>
       PRIORITY.requests.map((r) => ({ id: r.id, state: r.state })));
     check('two requests are created', requests.length >= 2, JSON.stringify(requests));
-    check('one is granted and one waits',
-          requests.some((r) => r.state === 'granted') && requests.some((r) => r.state === 'queued'),
-          requests.map((r) => r.id + '=' + r.state).join(', '));
+
+    /* Both ambulances are on the road and NEITHER has been served yet: a plan
+     * owns the decision until it runs. That is the point of the redesign - if
+     * ordinary arbitration had already granted one, the operator's veto would
+     * have nothing left to stop. */
+    const amb = await street.evaluate(() => {
+      const p = PRIORITY.plan();
+      // Only the two ambulances THIS plan owns. Earlier checks in this run
+      // dispatched their own priority requests, and those vehicles are still
+      // legitimately on the road holding corridors of their own.
+      const ids = p ? [p.winnerId, p.loserId] : [];
+      const v = SIM.vehicles.filter((x) => x.emergency && ids.indexOf(x.requestId) !== -1);
+      return {
+        onRoad: v.length,
+        approaches: v.map((x) => x.dir).sort().join(''),
+        holding: v.filter((x) => x.priority).length,
+        plan: p && { winner: p.winnerId, state: p.state, usedModel: p.usedModel, reason: p.reason }
+      };
+    });
+    check('both ambulances are on the road, from adjacent approaches',
+          amb.onRoad === 2 && amb.approaches === 'ES', amb.onRoad + ' ambulances, approaches ' + amb.approaches);
+    check('neither is served until the plan runs', amb.holding === 0 &&
+          amb.plan && amb.plan.state === 'pending', 'holding ' + amb.holding +
+          ', plan ' + (amb.plan && amb.plan.state));
+    check('the plan names a winner and says why',
+          !!(amb.plan && amb.plan.winner && amb.plan.reason.length > 40),
+          (amb.plan && amb.plan.reason) || 'no plan');
+    check('and the trained model contributed to it',
+          !!(amb.plan && amb.plan.usedModel), amb.plan && amb.plan.usedModel ? 'model consulted' : 'case score only');
+
+    // The control room must be showing it, with a countdown and a veto.
+    await sleep(1200);
+    const planUi = await room.evaluate(() => {
+      const box = document.getElementById('plan');
+      return {
+        visible: box && !box.classList.contains('hidden'),
+        options: document.querySelectorAll('.plan-option').length,
+        chosen: document.querySelectorAll('.plan-option.chosen').length,
+        veto: !!document.getElementById('btn-plan-stop')
+      };
+    });
+    check('the control room shows the plan, with a veto',
+          planUi.visible && planUi.options === 2 && planUi.chosen === 1 && planUi.veto,
+          JSON.stringify(planUi));
+
+    // Let it run, and confirm the default really is to act.
+    await street.evaluate(() => PRIORITY.executePlan());
+    await sleep(800);
+    const afterPlan = await street.evaluate(() => {
+      const p = PRIORITY.plan();
+      const ids = [p.winnerId, p.loserId];
+      return {
+        state: p.state,
+        winnerState: PRIORITY.byId(p.winnerId).state,
+        loserState: PRIORITY.byId(p.loserId).state,
+        holding: SIM.vehicles.filter((v) => v.emergency && v.priority &&
+                                      ids.indexOf(v.requestId) !== -1).length
+      };
+    });
+    check('running the plan serves exactly one of the two',
+          afterPlan.state === 'executed' && afterPlan.winnerState === 'granted' &&
+          afterPlan.loserState !== 'granted' && afterPlan.holding === 1,
+          JSON.stringify(afterPlan));
 
     const conflictSeen = await street.evaluate(() => PRIORITY.conflicts().length);
     check('the conflict is predicted', conflictSeen > 0, conflictSeen + ' predicted');
@@ -510,6 +527,53 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     if (WANT_SHOTS) {
       await street.screenshot({ path: path.join(SHOT_DIR, 'street-llm.png') });
     }
+
+    /* The 3D checks run LAST. A live WebGL context left open across the long
+     * language-model wait above was enough to take the page's GPU process
+     * down in headless swiftshader, and the harness died with a detached
+     * frame - a failure of the test rig, not of the app. */
+    /* ---- the 3D view must show the scenarios, not just the traffic ----
+     * A pretty animation with no flooded road and no stated reason tells an
+     * audience nothing about what the demo is doing. Headless Chromium often
+     * has no WebGL, and that is not a failure of this code, so the check
+     * reports which of the two cases it hit.
+     */
+    await street.click('.tab[data-pane="operate"]');
+    await sleep(300);
+    await street.click('#btn-flood');
+    await sleep(600);
+    const wentThreeD = await street.evaluate(() => {
+      document.getElementById('view-3d').click();
+      return RENDER3D.isActive();
+    });
+    await sleep(1400);
+    if (wentThreeD) {
+      const ov = await street.evaluate(() => {
+        const cards = [...document.querySelectorAll('.ov3d-card')];
+        const banner = document.querySelector('.ov3d-banner');
+        return {
+          cards: cards.length,
+          placed: cards.filter((e) => !e.hidden && parseFloat(e.style.left) > 0).length,
+          text: (cards[0] && cards[0].textContent) || '',
+          banner: banner && !banner.hidden ? banner.textContent : ''
+        };
+      });
+      check('the 3D view labels every junction with its decision',
+            ov.cards === 4 && ov.placed === 4,
+            ov.placed + '/4 placed: "' + ov.text.trim() + '"');
+      check('and says out loud when a road is flooded',
+            /FLOODED/.test(ov.banner), ov.banner || 'no banner');
+    } else {
+      check('the 3D view refuses politely when WebGL is unavailable',
+            true, 'no WebGL context in this browser, and 2D is unaffected');
+    }
+    await street.evaluate(() => { document.getElementById('view-2d').click(); });
+    await street.click('.tab[data-pane="operate"]');
+    await sleep(200);
+    await street.click('#btn-normal');
+    await sleep(400);
+    await street.click('.tab[data-pane="learn"]');
+    await sleep(300);
 
     /* ---- late errors ---- */
     check('no errors appeared during the whole run',

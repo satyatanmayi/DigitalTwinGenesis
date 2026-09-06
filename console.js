@@ -100,6 +100,65 @@
     return opts;
   }
 
+  /* ------------------------------------------------------------- the plan
+   * The conflict panel above asks the operator to choose. This one is
+   * different, and the difference is the whole point: the network has ALREADY
+   * chosen, it says why, and it will act on its own. The operator's job here is
+   * not to decide - it is to veto.
+   *
+   * That is the right default for an emergency. A system that waits for a human
+   * to click before an ambulance gets a green has moved the delay, not removed
+   * it. A system that acts and can be stopped keeps the human in charge without
+   * putting them in the critical path.
+   */
+  document.getElementById('btn-plan-stop').addEventListener('click', function () {
+    LINK.send('command', { action: 'stopPlan', why: 'Stopped by the control room operator.' });
+  });
+  document.getElementById('btn-plan-now').addEventListener('click', function () {
+    LINK.send('command', { action: 'runPlanNow' });
+  });
+
+  function renderPlan() {
+    const box = el('plan');
+    const p = state && state.plan;
+
+    if (!p || p.state !== 'pending') {
+      box.classList.add('hidden');
+      return;
+    }
+    box.classList.remove('hidden');
+    el('calm').classList.add('hidden');
+
+    box.classList.toggle('critical', p.secondsLeft <= 3);
+    el('plan-tag').textContent = 'PLAN READY — RUNNING AUTOMATICALLY';
+    el('plan-count').textContent = 'in ' + p.secondsLeft + 's';
+    el('plan-title').textContent =
+      'Two ambulances converging on ' + p.junctionId + ' from adjacent approaches';
+    el('plan-why').textContent = p.reason;
+
+    const host = el('plan-options');
+    host.innerHTML = '';
+    for (const o of p.options) {
+      const card = document.createElement('div');
+      card.className = 'plan-option' + (o.winner ? ' chosen' : '');
+      card.innerHTML =
+        '<div class="po-head"><b>' + esc(o.id) + '</b>' +
+        '<span>' + esc(o.severity) + ' · ' + o.persons +
+        (o.persons === 1 ? ' patient' : ' on board') + ' · from ' + esc(o.approach) + '</span></div>' +
+        '<div class="po-rows">' +
+        row('the case', o.caseScore) +
+        row('the network', o.networkValue === null ? 'no model' : o.networkValue) +
+        row('combined', o.combined) +
+        '</div>' +
+        '<div class="po-verdict">' + (o.winner ? 'SERVED FIRST' : 'HELD, THEN RELEASED') + '</div>';
+      host.appendChild(card);
+    }
+
+    function row(label, value) {
+      return '<div class="po-row"><span>' + label + '</span><b>' + esc(String(value)) + '</b></div>';
+    }
+  }
+
   function renderAlert() {
     const alertBox = el('alert');
     const calm = el('calm');
@@ -112,7 +171,10 @@
 
     if (!live.length) {
       alertBox.classList.add('hidden');
-      calm.classList.remove('hidden');
+      // "Nothing needs you" is only true if the plan panel is not asking for a
+      // veto. renderPlan runs first; this must not undo it.
+      const planUp = state && state.plan && state.plan.state === 'pending';
+      calm.classList.toggle('hidden', !!planUp);
       return;
     }
 
@@ -273,6 +335,7 @@
       });
     }
     watchForEvents();
+    renderPlan();
     renderAlert();
     renderJunctions();
     renderRequests();

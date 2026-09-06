@@ -620,6 +620,9 @@ const SIM = (function () {
       queueZone: QUEUE_ZONE
     },
     PARAMS: PARAMS,
+    /** Distance along a direction's travel axis, so callers can place a
+     *  vehicle a known number of metres before a junction. */
+    progressOf: progressOf,
     SIGNAL: SIGNAL,
     VEHICLE_TYPES: VEHICLE_TYPES,
     PX_TO_KMH: PX_TO_KMH,

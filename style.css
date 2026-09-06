@@ -256,6 +256,11 @@ body { display: grid; grid-template-columns: 70fr 30fr; }
 }
 .demo-steps .step:hover { border-color: var(--accent); }
 .demo-steps .step.done { border-color: var(--green); }
+.demo-steps .step.active { border-color: var(--accent); background: var(--panel-2); box-shadow: 0 0 0 1px var(--accent); }
+.demo-steps .step.active b { color: var(--accent); }
+.linkbtn { background: none; border: 0; padding: 2px 0; margin-top: 6px; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; color: var(--text-dim); text-decoration: underline; }
+.linkbtn:hover { color: var(--accent); }
 .demo-steps .step.done b { color: var(--green); }
 #demo-say { color: var(--text); font-size: 13px; line-height: 1.4; min-height: 34px; }
 
@@ -394,8 +399,11 @@ body { display: block; }
 .ov3d-card.incident { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn); }
 
 .ov3d-priority {
+  /* Below the vehicle, not above it. The junction card already occupies the
+     space over a junction, and an ambulance is most interesting exactly when
+     it is at one - so putting the tag above guarantees the collision. */
   position: absolute;
-  transform: translate(-50%, -140%);
+  transform: translate(-50%, 45%);
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 800;
@@ -420,3 +428,7 @@ body { display: block; }
   border-radius: 4px;
   padding: 5px 12px;
 }
+
+/* The HELD variant of the ambulance tag: same shape, different meaning, so it
+ * must not be the same colour. White = has the corridor, amber = waiting. */
+.ov3d-priority.held { background: var(--warn); color: #241800; }
