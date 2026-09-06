@@ -330,6 +330,51 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     check('control room mirrors the street', mirrored.junctions === 4 && mirrored.queue !== '—',
           mirrored.junctions + ' junctions, queue reads "' + mirrored.queue + '"');
 
+    /* ---- a bad day on the street must reach the control room ----
+     * The calm panel promises this screen wakes for a stopped approach. It did
+     * not: an accident changed one border colour and nothing else, so the
+     * operator's screen said "no decision needed right now" while an approach
+     * was dead.
+     */
+    await street.bringToFront();
+    await street.click('.tab[data-pane="operate"]');
+    await sleep(300);
+    await street.click('#btn-accident');
+    await sleep(300);
+    await street.click('#btn-flood');
+    await sleep(2200);
+    await room.bringToFront();
+    await sleep(1200);
+
+    const cond = await room.evaluate(() => ({
+      up: !document.getElementById('conditions').classList.contains('hidden'),
+      calm: !document.getElementById('calm').classList.contains('hidden'),
+      rows: [...document.querySelectorAll('.cond b')].map((e) => e.textContent)
+    }));
+    check('a collision and a flood reach the control room',
+          cond.up && !cond.calm && cond.rows.length >= 2, cond.rows.join(' · ') || 'nothing shown');
+    check('and each one says what it means for the operator',
+          cond.rows.some((r) => /stopped discharging/i.test(r)) &&
+          cond.rows.some((r) => /flooded/i.test(r)),
+          cond.rows.join(' · '));
+
+    await street.bringToFront();
+    await street.click('#btn-normal');
+    await sleep(2200);
+    await room.bringToFront();
+    await sleep(1200);
+    const quiet = await room.evaluate(() =>
+      document.getElementById('conditions').classList.contains('hidden'));
+    check('and the screen goes quiet again when they clear', quiet === true,
+          quiet ? 'conditions panel hidden' : 'still showing');
+
+    // Hand focus back. A backgrounded page has its requestAnimationFrame
+    // throttled, and sim.js drives the whole world from rAF - so leaving the
+    // street behind the control room freezes the simulation clock and every
+    // later check that waits for a controller to decide silently gets nothing.
+    await street.bringToFront();
+    await sleep(500);
+
     /* ---- the centrepiece: two ambulances ---- */
     await street.evaluate(() => { SIM.setPlanAll({ greenNS: 18, greenEW: 18 }); SCENARIOS.twoAmbulances(); });
     await sleep(2000);

@@ -159,6 +159,88 @@
     }
   }
 
+  /* --------------------------------------------------------- conditions
+   * The calm panel promises this screen "wakes up when something is about to
+   * need a person: two priority requests converging, a queue about to spill
+   * back, or an approach that has stopped discharging". Only the first of those
+   * three was ever implemented, so a collision or a flooded road on the street
+   * changed nothing here at all - the operator's screen said the network was
+   * inside its normal envelope while an approach was dead.
+   *
+   * These are deliberately NOT alerts with options. Nothing here is waiting on
+   * a decision; they are the context an operator needs before making one. An
+   * approval to run a priority corridor means something different when the road
+   * it runs on is under water.
+   */
+  function conditionsFrom(s) {
+    if (!s) return [];
+    const out = [];
+
+    for (const key of s.blocked || []) {
+      const parts = String(key).split(':');
+      out.push({
+        level: 'critical',
+        title: 'Approach ' + parts[1] + ' at ' + parts[0] + ' has stopped discharging',
+        detail: 'A collision is blocking it. That queue cannot clear on green, so it ' +
+                'spills back towards the junction behind it. Shortening the other ' +
+                'phases lets the block drain.'
+      });
+    }
+
+    for (const road of s.flooded || []) {
+      out.push({
+        level: 'warn',
+        title: road.toUpperCase() + ' is flooded',
+        detail: 'Speeds are down and heavy vehicles are barred by weight restriction. ' +
+                'A priority corridor routed along this road will not run at the speed ' +
+                'the estimate assumes.'
+      });
+    }
+
+    // A queue about to spill back - the third thing the calm panel promises.
+    for (const j of s.junctions || []) {
+      for (const d of ['N', 'S', 'E', 'W']) {
+        if (j.queues[d] >= 12 && !(j.blocked === d)) {
+          out.push({
+            level: 'warn',
+            title: j.id + ' ' + d + ' is ' + j.queues[d] + ' vehicles deep',
+            detail: 'Long enough to reach back towards the junction upstream. Worth ' +
+                    'watching before granting anything that stops this approach.'
+          });
+        }
+      }
+    }
+
+    if (s.paused) {
+      out.push({ level: 'warn', title: 'The street is paused',
+                 detail: 'Nothing on this screen is advancing.' });
+    }
+    return out;
+  }
+
+  function renderConditions() {
+    const box = el('conditions');
+    const list = conditionsFrom(state);
+
+    if (!list.length) { box.classList.add('hidden'); return; }
+    box.classList.remove('hidden');
+    el('calm').classList.add('hidden');
+
+    const worst = list.some((c) => c.level === 'critical');
+    box.classList.toggle('critical', worst);
+    el('cond-tag').textContent = worst ? 'THE NETWORK IS DEGRADED' : 'CONDITIONS';
+    el('cond-count').textContent = list.length + (list.length === 1 ? ' condition' : ' conditions');
+
+    const host = el('cond-list');
+    host.innerHTML = '';
+    for (const c of list) {
+      const row = document.createElement('div');
+      row.className = 'cond ' + c.level;
+      row.innerHTML = '<b>' + esc(c.title) + '</b><span>' + esc(c.detail) + '</span>';
+      host.appendChild(row);
+    }
+  }
+
   function renderAlert() {
     const alertBox = el('alert');
     const calm = el('calm');
@@ -173,8 +255,11 @@
       alertBox.classList.add('hidden');
       // "Nothing needs you" is only true if the plan panel is not asking for a
       // veto. renderPlan runs first; this must not undo it.
+      // "Nothing needs you" is only true when neither the plan panel nor the
+      // conditions panel is saying otherwise.
       const planUp = state && state.plan && state.plan.state === 'pending';
-      calm.classList.toggle('hidden', !!planUp);
+      const condUp = conditionsFrom(state).length > 0;
+      calm.classList.toggle('hidden', !!(planUp || condUp));
       return;
     }
 
@@ -336,6 +421,7 @@
     }
     watchForEvents();
     renderPlan();
+    renderConditions();
     renderAlert();
     renderJunctions();
     renderRequests();
