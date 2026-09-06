@@ -229,7 +229,17 @@
    * a bus behind a two-wheeler as surely as for two cars. */
   const WIDTH_SCALE = 2.0;
   const MIN_DRAW_W = 8;
-  const GAP_USE = 0.7;                        // must stay below 1
+  /* Was 0.7. That assumed vehicles never close below the 2 m standstill gap,
+   * but the hard floor in sim.js only guarantees they never INTERPENETRATE -
+   * a decelerating vehicle can settle a little inside MIN_GAP and stay there.
+   * The harness caught a 0.3 px draw overlap from exactly that.
+   *
+   * Zero is the only value that is provably safe against the invariant the
+   * physics actually offers. The honest alternative is to make sim.js enforce
+   * the documented 2 m standstill gap, which would also let this go back up -
+   * but that changes the simulated world and every published number with it,
+   * so it is not a thing to do the morning of a demo. */
+  const GAP_USE = 0;
   const LEN_PAD = SIM.PARAMS.minGapM * SIM.PARAMS.pxPerM * GAP_USE;
 
   function drawVehicles() {

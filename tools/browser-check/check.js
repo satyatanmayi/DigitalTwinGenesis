@@ -150,7 +150,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
      * in the same lane would touch.
      */
     const overlap = await street.evaluate(() => {
-      const pad = SIM.PARAMS.minGapM * SIM.PARAMS.pxPerM * 0.7;   // render.js LEN_PAD
+      const pad = SIM.PARAMS.minGapM * SIM.PARAMS.pxPerM * 0;     // render.js GAP_USE
       const lanes = {};
       for (const v of SIM.vehicles) {
         const k = v.dir + '|' + v.road + '|' + v.lane;
