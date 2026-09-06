@@ -27,15 +27,33 @@ const LINK = (function () {
 
   let channel = null;
   let usingStorage = false;
+  let note = '';
   const handlers = [];
 
+  /* BroadcastChannel is scoped to an ORIGIN, and every file:// document gets
+   * its own opaque origin. So on file:// the constructor happily succeeds and
+   * then no message ever crosses between the two windows - which is worse than
+   * failing, because the channel looks alive. That is exactly what happened:
+   * the control room sat on "waiting for the street" while reporting that it
+   * was connected by BroadcastChannel.
+   *
+   * So do not trust the constructor. On file:// go straight to localStorage,
+   * which Chrome and Firefox do share between file:// documents. */
+  const isFile = (typeof location !== 'undefined' && location.protocol === 'file:');
+
   try {
-    if (typeof BroadcastChannel !== 'undefined') {
+    if (!isFile && typeof BroadcastChannel !== 'undefined') {
       channel = new BroadcastChannel(CHANNEL);
       channel.onmessage = function (e) { deliver(e.data); };
     }
   } catch (e) {
     channel = null;
+  }
+
+  if (isFile) {
+    note = 'Opened from a file, so the two windows are using localStorage. ' +
+           'If they do not find each other, run run.bat and open ' +
+           'http://localhost:8000 instead.';
   }
 
   if (!channel && typeof window !== 'undefined') {
@@ -74,6 +92,9 @@ const LINK = (function () {
       return channel ? 'BroadcastChannel' : (usingStorage ? 'localStorage' : 'none');
     },
     available: function () { return !!(channel || usingStorage); },
+    /** Why the link is the way it is, for the operator to read. */
+    note: function () { return note; },
+    isFile: function () { return isFile; },
     on: function (fn) { handlers.push(fn); },
     send: send
   };

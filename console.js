@@ -44,12 +44,41 @@
     }
   });
 
+  /* If nothing has ever arrived, say what to DO about it. The common cause is
+   * opening both pages by double-clicking them: file:// documents each get an
+   * opaque origin, so the windows cannot find each other however long you
+   * wait. Telling the operator "waiting for the street" forever is useless. */
+  let waitingSince = Date.now();
   setInterval(function () {
     const live = Date.now() - lastSeen < 2500;
     el('link-dot').classList.toggle('live', live);
-    el('link-state').textContent = live
-      ? 'live via ' + LINK.transport()
-      : (state ? 'street not responding' : 'open index.html in another window');
+
+    if (live) {
+      el('link-state').textContent = 'live via ' + LINK.transport();
+      el('link-help').hidden = true;
+      return;
+    }
+    if (state) {
+      el('link-state').textContent = 'street not responding';
+      return;
+    }
+
+    el('link-state').textContent = LINK.isFile()
+      ? 'not connected (opened from a file)'
+      : 'open index.html in another window';
+
+    // Give it a few seconds before nagging - the street may still be loading.
+    if (Date.now() - waitingSince > 6000) {
+      const help = el('link-help');
+      help.hidden = false;
+      help.textContent = LINK.isFile()
+        ? 'These two pages were opened straight from disk, so the browser gives ' +
+          'each one its own origin and they cannot talk. Close both, run ' +
+          'run.bat, and open http://localhost:8000/index.html instead. ' +
+          'Everything on the street still works on its own.'
+        : 'No state has arrived yet. Open index.html in another window of the ' +
+          'same browser, served from the same address as this page.';
+    }
   }, 800);
 
   /* ---------------------------------------------------------------- options

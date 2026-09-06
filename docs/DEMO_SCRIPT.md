@@ -13,13 +13,22 @@ itself and must not be cut.
 
 ## §0 — SETUP (before you are called in) · 60 s, not on the clock
 
-1. Open **`index.html`** — this is **THE STREET**.
+1. **Run `run.bat`.** It serves the app and opens
+   <http://localhost:8000/index.html> — this is **THE STREET**.
+
+   > **Do NOT double-click `index.html`.** Opened straight from disk, the
+   > browser gives each window its own origin and the two cannot talk, so the
+   > control room never connects. The control room will now tell you this in a
+   > yellow bar instead of waiting silently — but just use `run.bat`.
 2. Click **CONTROL ROOM →** (top right). A second window opens — this is **THE
    CONTROL ROOM**. Click **Got it** on its help card.
 3. Put them **side by side**: street on the left, control room on the right.
 4. On the street: **PLAN** tab → click **clear all steps**.
 5. Check the control room top-right says **live via BroadcastChannel** with a
-   green dot. If it does not, reload the control room.
+   green dot.
+   - Still "waiting"? Reload the control room.
+   - Says **"not connected (opened from a file)"**? You skipped `run.bat`.
+     Close both windows and start again from step 1.
 6. Leave the street window **in front / focused** — a background tab throttles
    the animation.
 
