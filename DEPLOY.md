@@ -4,15 +4,24 @@ The whole thing is static — HTML, CSS and vanilla JavaScript, with p5.js and
 three.js from a CDN. There is no server, no build step and no database, so any
 static host will serve it.
 
-## GitHub Pages (what this repo is set up for)
+## It is live
 
-In the repo on github.com:
+| | |
+|---|---|
+| The street (the twin) | <https://satyatanmayi.github.io/DigitalTwinGenesis/> |
+| The control room | <https://satyatanmayi.github.io/DigitalTwinGenesis/console.html> |
 
-1. **Settings** → **Pages**
-2. **Source**: `Deploy from a branch`
-3. **Branch**: `main`, folder `/ (root)` → **Save**
+Served by GitHub Pages from `main` at the repository root. To rebuild it,
+push to `main`; a deploy takes about a minute.
 
-Give it a minute, then:
+If it ever needs setting up again: **Settings** → **Pages** → source
+`Deploy from a branch`, branch `main`, folder `/ (root)`.
+
+Verified on the deployed copy: p5 canvas created, weights loaded, clock
+advancing, and the control room reporting **live via BroadcastChannel** with
+all four junctions mirrored.
+
+Old instructions, kept for reference:
 
 | | |
 |---|---|

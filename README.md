@@ -12,6 +12,11 @@ No build step, no framework, no npm. Vanilla JavaScript plus p5.js from a CDN.
 
 ---
 
+**Live:** [the street](https://satyatanmayi.github.io/DigitalTwinGenesis/) ·
+[the control room](https://satyatanmayi.github.io/DigitalTwinGenesis/console.html)
+— open the street first and click **CONTROL ROOM →**, so both windows share an
+origin and can talk.
+
 ## Start here
 
 | I want to… | Open |
